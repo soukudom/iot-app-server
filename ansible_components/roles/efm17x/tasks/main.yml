@@ -1,0 +1,74 @@
+---
+# Main required components for EFM 1.7.x installation
+
+- name: Installing general utilities
+  yum:
+          name:
+                   - unzip
+                   - wget
+                   - tree
+                   - java-1.8.0-openjdk-headless
+                   - git
+                   - yum-utils
+          state: installed
+
+- name: Allowing required EFM ports through the Firewall
+  command: firewall-cmd --add-port="{{item}}"/tcp --permanent
+  become: yes
+  with_items:
+          - "443"
+          - "8080"
+          - "8443"
+          - "9080"
+          - "9443"
+          - "1883"
+
+- name: Restarting the Firewall for changes to take effect
+  command: firewall-cmd --reload
+  become: yes
+
+# TODO 1: please replace source from "full/path/to" to path to .zip file in personal Ansible workstation
+# the EFM 1.7.x file must be in the /home directory of the efm sudo user
+
+#- name: Copying EFM-1-7-x archive to hosts
+#  copy:
+#          src: full/path/to/EFM-1-7-2.zip
+#          dest: /home/efm
+#          owner: efm
+#          group: efm
+
+- name: Unpacking the archive 
+  unarchive:
+          src: /home/efm/EFM-1-7-2.zip
+          dest: /home/efm
+          owner: efm
+          group: efm
+          remote_src: yes
+
+- name: Unpacking the repository 
+  unarchive:
+          src: /home/efm/EFM-1-7-2/centos7/repo-1.7.2-12.zip
+          dest: /home/efm/EFM-1-7-2/centos7
+          owner: efm
+          group: efm
+          remote_src: yes
+
+- name: Creating the EFM repository required for installation
+  file:
+          path: /etc/yum.repos.d/efm.repo
+          state: touch  
+
+- name: Populating the efm.repo file
+  blockinfile:
+          path: /etc/yum.repos.d/efm.repo
+          block: |
+                  [local] 
+                  name=EFM Repository 
+                  baseurl=file:///home/efm/EFM-1-7-2/centos7/repo 
+                  gpgcheck=0 
+                  enabled=1
+
+- name: Updating the yum with the EFM repository
+  command: yum updateinfo
+  become: yes
+
