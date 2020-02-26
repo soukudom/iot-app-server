@@ -1,0 +1,35 @@
+---
+# DGLux5 installation file for EFM 1.7.x
+
+- name: Installing EFM DGLux5 component
+  command: yum install -y efm-dglux
+  become: yes
+
+- name: Installing DART message broker
+  command: yum install -y efm-dart-runtime
+  become: yes
+  
+#TODO 1: please replace "full/path/to" with the path this credentials file on the personal Ansible workstation 
+- name: Including the credentials
+  include_vars:
+          file: full/path/to/roles/efm17x/vars/credentials.yml
+
+- name: Creating the DGLux user
+  command: ./bin/users.sh add -u "{{dgluxUser}}" -p "{{dgluxPass}}" -s
+  become: yes
+  args:
+          chdir: /opt/cisco/kinetic/dglux_server
+
+- name: Allowing DGLux5 server to start after reboot
+  command: systemctl "{{item}}" efm-dglux
+  become: yes
+  with_items:
+          - "enable"
+          - "stop"  
+          
+- name: "Starting the DGLux5 server located at: https://[x.x.x.x]:9443"
+  command: ./daemon.sh start
+  become: yes
+  args:
+          chdir: /opt/cisco/kinetic/dglux_server/bin
+
