@@ -1,0 +1,22 @@
+---
+# Mosquitto MQTT broker installation for EFM 1.7.x
+
+- name: Installing Extra Packages for Enterprise Linux (EPEL)
+  command: yum -y install epel-release
+  become: yes
+
+- name: Updating yum repositories
+  command: yum updateinfo
+  become: yes
+
+- name: Installing Mosquitto MQTT messaging broker
+  command: yum -y install mosquitto
+  become: yes
+
+- name: Enabling and starting Mosquitto
+  command: systemctl "{{item}}" mosquitto
+  become: yes
+  with_items:
+          - "enable"
+          - "start"
+
