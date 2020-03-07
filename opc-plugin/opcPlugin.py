@@ -6,12 +6,14 @@ from opcua import Client
 from opcua import ua
 
 import sys
+import time
 
 ## TODO: Add Sphinx
 ## TODO: Create opc-au moduel diagrams
 ## TODO: How to solve connection handling + subscription
 ## TODO: Check input parameters
-## TODOL Add secure login methods
+## TODO: Add secure login methods
+## TODO: Add mqtt connection 
 
 class SubHandler(object):
     """
@@ -22,10 +24,11 @@ class SubHandler(object):
     """
 
     def datachange_notification(self, node, val, data):
-        print("Python: New data change event", node, val)
+        print("OPC/UA: New data change event", node, val)
+        # TODO: change polling period till another event
 
-    def event_notification(self, event):
-        print("Python: New event", event)
+    #def event_notification(self, event):
+    #    print("OPC/UA: New event", event)
 
 
 class OpcClient:
@@ -35,6 +38,12 @@ class OpcClient:
         self.settings = settings
         self.handlers = {}
         self.subscritption = None
+
+    def login(self):
+        pass
+    
+    def logout(self):
+        pass
     
     def readData(self):
         data = {}
@@ -46,8 +55,8 @@ class OpcClient:
                 data[key] = node.get_value()
             
             print(data)
-            #client.disconnect()
-            #return data
+            client.disconnect()
+            return data
 
         except Exception as e:
             print("\033[31mError\033[0m: Unable to read OPC/UA server data -> '{}'".format(e))
@@ -74,13 +83,21 @@ class OpcClient:
         if len(self.handlers) == 0:
             # Close subscription
             self.subscription.delete()
+
+class MqttClient:
+    def __init__(self):
+        pass
+
+    def sendData(self):
+        pass
+
+    def receivedData(self):
+        pass
     
         
 class Config:
     def __init__(self,filename):
         self.config = configparser.ConfigParser()
-
-#    def parse(self, filename):
         self.config.read(filename)
         
         #sections = config.sections()
@@ -115,6 +132,25 @@ class Config:
                     settings[section][key] = val #self.config[section]
         return settings
 
+class Control:
+    def __init__(self, poll_interval, opc_client):
+        self.poll_interval = poll_interval 
+        self.ready_flag = True
+        self.opc_client = opc_client
+
+    def start(self):
+        #login
+        self.ready_flag = True
+    
+    def run(self):
+        while self.ready_flag:
+            #read OPC data
+            # send them via MQTT
+            time.sleep(self.poll_interval)
+    
+    def stop(self):
+        self.ready_flag = False
+        # logout
 
 if __name__ == "__main__":
     params = Config("package_config.ini")
@@ -125,10 +161,22 @@ if __name__ == "__main__":
     variables = params.getOpcVariables()
     # Get reading settings for variables
     settings = params.getOpcVariablesSettings()
-    
-
-    opc = OpcClient(url,variables,settings)
+   
+    opc_client = OpcClient(url,variables,settings)
     print(opc.readData())
+    ctl = Control(2,opc_client) 
+    ctl.start()
+    ctl.run()
+        
+    #sleep = 2
+    # login to OPC server
+    #while True:
+        # read OPC data
+        # send them via MQTT
+        # check status register -> change reading period
+    #    time.sleep(sleep)
+        
+
 
 
     
