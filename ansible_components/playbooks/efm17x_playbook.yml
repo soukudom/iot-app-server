@@ -23,6 +23,13 @@
   tasks:
           - name: Installation of Mosquitto MQTT broker
             include_tasks: full/path/to/roles/efm17x/tasks/mosquitto.yml
+            
+# Task 4  - DB Installation an configuration
+# TODO
 
-# Task 4 - DB Installation an configuration
-             
+# Task 5 (optional) - Demo Dashboard Installation
+#- hosts: test
+#  become: true
+#  tasks:
+#          - name: Demo Chart Ferrox Dashboard installation
+#            include_tasks: /full/path/to/demo-dash.yml  
