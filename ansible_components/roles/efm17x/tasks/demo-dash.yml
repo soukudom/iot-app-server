@@ -1,0 +1,15 @@
+- name: Copying demo dashboard files to host
+  copy:
+          src: full/path/to/demo_dash.zip
+          dest: /home/efm
+          owner: dglux
+          group: dglux
+
+- name: Unpacking the archive
+  unarchive:
+          src: /home/efm/demo_dash.zip
+          dest: /opt/cisco/kinetic/dglux_server/files/proj
+          owner: dglux
+          group: dglux
+          remote_src: yes
+

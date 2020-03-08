@@ -32,4 +32,4 @@
 #  become: true
 #  tasks:
 #          - name: Demo Chart Ferrox Dashboard installation
-#            include_tasks: /full/path/to/demo-dash.yml  
+#            include_tasks: full/path/to/demo-dash.yml  
