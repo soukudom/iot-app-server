@@ -20,10 +20,15 @@ named "credentials.yml" - this file is located in "roles/efm17x/vars/" and is en
 4. The file structure must remain exacty as provided in the entire "roles" folder for Ansible to understand it correctly
 ## EFM 1.7.2 Installation
 In order to correctly run the Ansible playbook and commence the EFM 1.7.2 installation:
-* Create a vault password file, so that you won't have to enter the password everytime you run the playbook on a target host 
+1. Create a vault password file, so that you won't have to enter the password everytime you run the playbook on a target host 
 and place the file in roles/efm17x/files
-* In the roles/efm17x/tasks folder please go through the "main.yml" and "dglux.yml" files and make the necessary changes
+2. In the roles/efm17x/tasks folder please go through the "main.yml" and "dglux.yml" files and make the necessary changes
 in each TODO section
-* In order to run the Ansible playbook the following command must be used:
+3. In order to run the Ansible playbook the following command must be used:
 "$ ansible-playbook --vault-password-file roles/efm17x/files/.vault_pass -K playbooks/efm17x_playbook.yml"
-* The -K argument will prompt you to enter the sudo password for the target hosts
+4. The -K argument will prompt you to enter the sudo password for the target hosts
+## (Optional) Demo Dashboard installation
+In order to install the demo Dashboard the steps are:
+1. Modify the Ansible playbook in order to have to correct paths to the files
+2. Run the playbook
+3. In the EFM DGLux Dashboard select: "Project" (the between "File" and "Edit") -> "Open Project" -> "Open/Import" tab -> select the project and open it
