@@ -29,10 +29,11 @@ in each TODO section
 4. The -K argument will prompt you to enter the sudo password for the target hosts
 ## (Optional) Demo Dashboard installation
 In order to install the demo Dashboard the steps are:
-1. Modify the Ansible playbook in order to have to correct paths to the files
-2. Run the playbook
-3. In the EFM DGLux Dashboard select: "Project" (the between "File" and "Edit") -> "Open Project" -> "Open/Import" tab -> select the project and open it
-4. In the EFM DGLux Dashboard select: "Data" -> expand "sys" -> right-click "links" -> "Rescan" and "Start All Links" 
-5. In the EFM DGLux Dashboard select: "Data" -> expand "conns" -> expand "Refinery-Simulator" -> right-click "simulator" -> select "start"
-6. You can now navigate to the "Project" tab and view the demo Dashboard with simulated data
+1. Download the "server.zip" file from the provided Box link - this file is encrypted using Ansible Vault (the password is the same as for the "credentials.yml" file)
+2. Modify the Ansible playbook in order to have to correct paths to the files
+3. Run the playbook
+4. In the EFM DGLux Dashboard select: "Project" (the between "File" and "Edit") -> "Open Project" -> "Open/Import" tab -> select the project and open it
+5. In the EFM DGLux Dashboard select: "Data" -> expand "sys" -> right-click "links" -> "Rescan" and "Start All Links" 
+6. In the EFM DGLux Dashboard select: "Data" -> expand "conns" -> expand "Refinery-Simulator" -> right-click "simulator" -> select "start"
+7. You can now navigate to the "Project" tab and view the demo Dashboard with simulated data
  
