@@ -32,3 +32,7 @@ In order to install the demo Dashboard the steps are:
 1. Modify the Ansible playbook in order to have to correct paths to the files
 2. Run the playbook
 3. In the EFM DGLux Dashboard select: "Project" (the between "File" and "Edit") -> "Open Project" -> "Open/Import" tab -> select the project and open it
+4. In the EFM DGLux Dashboard select: "Data" -> expand "sys" -> right-click "links" -> "Rescan" and "Start All Links" 
+5. In the EFM DGLux Dashboard select: "Data" -> expand "conns" -> expand "Refinery-Simulator" -> right-click "simulator" -> select "start"
+6. You can now navigate to the "Project" tab and view the demo Dashboard with simulated data
+ 
