@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#import config
 import configparser
 
 from opcua import Client
@@ -10,12 +9,11 @@ import sys
 import time
 
 ## TODO: Add Sphinx
-## TODO: Create opc-au moduel diagrams
 ## TODO: How to solve connection handling + subscription
 ## TODO: Check input parameters
 ## TODO: Expcetion handling
 ## TODO: Add secure login methods
-## TODO: Add mqtt connection 
+## TODO: Add mqtt reverse connection 
 ## TODO: Add verbose mode
 
 class SubHandler(object):
@@ -86,20 +84,18 @@ class OpcClient:
                                 # Check and init the first value
                                 if self.registers[key]["min"] == None:
                                     self.registers[key]["min"] = data[key]["value"]
-                                    data[key]["register_min"] = data[key]["value"]
                                     print("<<<<<<< min param 111")
                                 elif int(self.registers[key]["min"]) > int(data[key]["value"]):
                                     print("<<<<<<< min param 222")
                                     self.registers[key]["min"] = data[key]["value"]
-                                    data[key]["register_min"] = data[key]["value"]
+                                data[key]["register_min"] = self.registers[key]["min"]
                             elif config_param == "max":
                                 # Check and init the first value
                                 if self.registers[key]["max"] == None:
                                     self.registers[key]["max"] = data[key]["value"]
-                                    data[key]["register_max"] = data[key]["value"]
                                 elif int(self.registers[key]["max"]) < int(data[key]["value"]):
                                     self.registers[key]["max"] = data[key]["value"]
-                                    data[key]["register_max"] = data[key]["value"]
+                                data[key]["register_max"] = self.registers[key]["max"]
                             else:
                                 print("\033[31mError\033[0m: Invalid option for register parameter in the configuration file")
                     if param_key == "state" and self.init:
@@ -110,7 +106,7 @@ class OpcClient:
                         data[key]["role"] = "status"
             # Key for specific configuration does not exist
             except Exception as e:
-                print("ERRORRRRRRRRRRRRRRRRRRr:",e)
+                pass
 
         return data
          
