@@ -4,6 +4,7 @@ import configparser
 
 from opcua import Client
 from opcua import ua
+import paho.mqtt.client as mqtt
 
 import sys
 import time
@@ -15,6 +16,7 @@ import time
 ## TODO: Expcetion handling
 ## TODO: Add secure login methods
 ## TODO: Add mqtt connection 
+## TODO: Add verbose mode
 
 class SubHandler(object):
     """
@@ -68,34 +70,47 @@ class OpcClient:
         data = {}
         for key, val in self.variables.items():
             node = self.client.get_node(val) 
-            data[key] = node.get_value()
+            data[key] = {}
+            data[key]["value"] = node.get_value()
+            data[key]["role"] = "normal"
+            data[key]["register_min"] = "n/a"
+            data[key]["register_max"] = "n/a"
             # Custom configuration parameters
             try:
                 for param_key, param_val in self.settings[key].items():
+                    # Add settings parameters to the data structure
                     if param_key == "register":
                         config = param_val.split(",")
                         for config_param in config:
                             if config_param == "min":
                                 # Check and init the first value
-                                if self.registers[key]["min"] is None:
-                                    self.registers[key]["min"] = data[key]
-                                elif int(self.registers[key]["min"]) > int(data[key]):
-                                    self.registers[key]["min"] = data[key]
+                                if self.registers[key]["min"] == None:
+                                    self.registers[key]["min"] = data[key]["value"]
+                                    data[key]["register_min"] = data[key]["value"]
+                                    print("<<<<<<< min param 111")
+                                elif int(self.registers[key]["min"]) > int(data[key]["value"]):
+                                    print("<<<<<<< min param 222")
+                                    self.registers[key]["min"] = data[key]["value"]
+                                    data[key]["register_min"] = data[key]["value"]
                             elif config_param == "max":
                                 # Check and init the first value
-                                if self.registers[key]["max"] is None:
-                                    self.registers[key]["max"] = data[key]
-                                elif int(self.registers[key]["max"]) < int(data[key]):
-                                    self.registers[key]["max"] = data[key]
+                                if self.registers[key]["max"] == None:
+                                    self.registers[key]["max"] = data[key]["value"]
+                                    data[key]["register_max"] = data[key]["value"]
+                                elif int(self.registers[key]["max"]) < int(data[key]["value"]):
+                                    self.registers[key]["max"] = data[key]["value"]
+                                    data[key]["register_max"] = data[key]["value"]
                             else:
                                 print("\033[31mError\033[0m: Invalid option for register parameter in the configuration file")
                     if param_key == "state" and self.init:
                         # Create subription
                         self.createSubscription(val)
                         self.init = False
+                    if param_key == "state":
+                        data[key]["role"] = "status"
             # Key for specific configuration does not exist
             except Exception as e:
-                pass
+                print("ERRORRRRRRRRRRRRRRRRRRr:",e)
 
         return data
          
@@ -142,9 +157,27 @@ class MqttClient:
     def __init__(self, broker,topic):
         self.broker = broker
         self.topic = topic
+        self.mqtt_client = mqtt.Client(client_id="iox-app", clean_session=False)
+        self.mqtt_client.on_connect = self.on_connect
+        self.mqtt_client.on_message = self.on_message
+
+    def login(self):
+        self.mqtt_client.connect(host=self.broker,port=1883,keepalive=60)
+        #self.mqtt_client.loop_forever()
+    
+    def logout(self):
+        self.mqtt_client.disconnect()
+
+    def on_connect(self,client, data, flags, rc):
+        client.subscribe(self.topic)
+
+    def on_message(self,client, data, msg):
+        print("MQTT Data:",msg.topic+" "+str(msg.payload))
 
     def sendData(self,data):
-        print("MQTT",data)
+        for record_key, record_val in data.items():
+            print("sending mqtt data to", self.topic,record_key)
+            self.mqtt_client.publish(self.topic+record_key,payload=str(record_val), qos=1, retain=True)
 
     def receivedData(self):
         pass
@@ -197,6 +230,7 @@ class Control:
     def start(self):
         #login
         self.opc_client.login()
+        self.mqtt_client.login()
         self.ready_flag = True
     
     def run(self):
