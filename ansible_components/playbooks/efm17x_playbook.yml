@@ -27,9 +27,9 @@
 # Task 4  - DB Installation an configuration
 # TODO
 
-# Task 5 (optional) - Demo Dashboard Installation
+# Task 5 (optional) - Demo Dashboard Installation and Server configuration
 #- hosts: test
 #  become: true
 #  tasks:
-#          - name: Demo Chart Ferrox Dashboard installation
+#          - name: Demo Chart Ferrox Dashboard installation and Server configuration
 #            include_tasks: full/path/to/demo-dash.yml  
