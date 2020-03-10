@@ -27,7 +27,7 @@ class SubHandler(object):
 
     def datachange_notification(self, node, val, data):
         if int(val)%5 == 0:
-            print("OPC/UA: New data change event", node, val)
+            print("OPC/UA: New data change event", node, val,type(data),data)
         # TODO: change polling period till another event
 
     # Event notification callback
@@ -176,7 +176,7 @@ class MqttClient:
         for record_key, record_val in data.items():
             ret = self.mqtt_client.publish(self.topic+record_key,payload=str(record_val), qos=0, retain=False)
 
-    def receivedData(self):
+    def receiveData(self):
         pass
     
         
