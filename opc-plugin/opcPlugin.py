@@ -15,6 +15,7 @@ import time
 ## TODO: Add secure login methods
 ## TODO: Add mqtt reverse connection 
 ## TODO: Add verbose mode
+## TODO: Local storage
 
 class SubHandler(object):
     """
@@ -25,9 +26,11 @@ class SubHandler(object):
     """
 
     def datachange_notification(self, node, val, data):
-        print("OPC/UA: New data change event", node, val)
+        if int(val)%5 == 0:
+            print("OPC/UA: New data change event", node, val)
         # TODO: change polling period till another event
 
+    # Event notification callback
     #def event_notification(self, event):
     #    print("OPC/UA: New event", event)
 
@@ -84,9 +87,7 @@ class OpcClient:
                                 # Check and init the first value
                                 if self.registers[key]["min"] == None:
                                     self.registers[key]["min"] = data[key]["value"]
-                                    print("<<<<<<< min param 111")
                                 elif int(self.registers[key]["min"]) > int(data[key]["value"]):
-                                    print("<<<<<<< min param 222")
                                     self.registers[key]["min"] = data[key]["value"]
                                 data[key]["register_min"] = self.registers[key]["min"]
                             elif config_param == "max":
@@ -132,7 +133,8 @@ class OpcClient:
         self.subscription = self.client.create_subscription(500, handler)
         handle = self.subscription.subscribe_data_change(self.client.get_node(address))
         self.handlers[address] = handle
-        print("Subscription created for address ",address)
+        # Verbose
+        #print("Subscription created for address ",address)
 
     def unsubscribeSubscriptions(self, address=None):
         # Unsubscribe all connection handlers
@@ -172,8 +174,7 @@ class MqttClient:
 
     def sendData(self,data):
         for record_key, record_val in data.items():
-            print("sending mqtt data to", self.topic,record_key)
-            self.mqtt_client.publish(self.topic+record_key,payload=str(record_val), qos=1, retain=True)
+            ret = self.mqtt_client.publish(self.topic+record_key,payload=str(record_val), qos=0, retain=False)
 
     def receivedData(self):
         pass
@@ -184,12 +185,6 @@ class Config:
         self.config = configparser.ConfigParser()
         self.config.read(filename)
         
-        #sections = config.sections()
-        #for i in sections:
-        #    print("section ", i)
-        #    for j in config[i]:
-        #        print(" key: ",j, "value:", config[i][j])
-
     def getGeneral(self):
         return self.config["general"]
 
