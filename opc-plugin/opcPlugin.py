@@ -4,6 +4,7 @@ import configparser
 from opcua import Client
 from opcua import ua
 import paho.mqtt.client as mqtt
+import json
 
 import sys
 import time
@@ -17,6 +18,8 @@ import time
 ## TODO: Add verbose mode
 ## TODO: Local storage
 
+VERBOSE=0
+
 class SubHandler(object):
     """
     Subscription Handler. To receive events from server for a subscription
@@ -24,12 +27,31 @@ class SubHandler(object):
     Do not do expensive, slow or network operation there. Create another
     thread if you need to do such a thing
     """
+    def __init__(self):
+        self.control = Control()
+        self.nodes = {}
+
+    def checkProcess(self,node,val):
+        if val == 0:
+            # Process have stopped => read slower
+            #print("Process stop")
+            pass
+        else:
+            # Process have started => read faster
+            #print("Process start")
+            pass
 
     def datachange_notification(self, node, val, data):
-        if int(val)%5 == 0:
-            print("OPC/UA: New data change event", node, val,type(data),data)
-        # TODO: change polling period till another event
+        #print("OPC/UA: New data change event", node, val,type(data),data)
 
+        if node in self.nodes:
+            # Check control value
+            self.checkProcess(node,val)
+        else:
+            # Create a first node
+            self.nodes[node] = val
+            self.checkProcess(node,val)
+            
     # Event notification callback
     #def event_notification(self, event):
     #    print("OPC/UA: New event", event)
@@ -156,21 +178,35 @@ class MqttClient:
         self.broker = broker
         self.topic = topic
         self.mqtt_client = mqtt.Client(client_id="iox-app", clean_session=False)
-        self.mqtt_client.on_connect = self.on_connect
+        #self.mqtt_client.on_connect = self.on_connect
         self.mqtt_client.on_message = self.on_message
+        self.control = None
 
     def login(self):
         self.mqtt_client.connect(host=self.broker,port=1883,keepalive=60)
+        self.control = Control()
         #self.mqtt_client.loop_forever()
     
     def logout(self):
         self.mqtt_client.disconnect()
 
-    def on_connect(self,client, data, flags, rc):
-        client.subscribe(self.topic)
+    #def on_connect(self,client, data, flags, rc):
+    #    client.subscribe(self.topic)
 
     def on_message(self,client, data, msg):
+        
         print("MQTT Data:",msg.topic+" "+str(msg.payload))
+        payload_data = json.loads(str(msg.payload.decode()))
+        for cmd_key, cmd_val in payload_data.items():
+            if cmd_key == "poll":
+                self.control.poll_interval = cmd_val
+            elif cmd_key == "clear":
+                pass
+            else:
+                print("Unknown command")
+                
+
+        print("val is",val["comm"])
 
     def sendData(self,data):
         for record_key, record_val in data.items():
@@ -178,6 +214,11 @@ class MqttClient:
 
     def receiveData(self):
         pass
+
+    def subscribe(self):
+        self.mqtt_client.subscribe(self.topic+"command")
+        self.mqtt_client.loop_start()
+        print("subscribed",self.topic+"commnad")
     
         
 class Config:
@@ -211,18 +252,30 @@ class Config:
                     settings[section][key] = val #self.config[section]
         return settings
 
-class Control:
-    def __init__(self, poll_interval, opc_client, mqtt_client):
-        self.poll_interval = poll_interval 
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class Control(metaclass=Singleton):
+    def __init__(self, poll_interval=5, opc_client=None, mqtt_client=None):
+        self.poll_interval = int(poll_interval) 
         self.ready_flag = True
         self.opc_client = opc_client
         self.mqtt_client = mqtt_client
 
+    # Start remote connections 
     def start(self):
         #login
         self.opc_client.login()
         self.mqtt_client.login()
+        self.mqtt_client.subscribe()
         self.ready_flag = True
+        if VERBOSE:
+            print("NOTE: MQTT and OPC connections have been established")
     
     def run(self):
         data = {}
@@ -231,30 +284,36 @@ class Control:
             data = self.opc_client.pollData()
             # send them via MQTT
             self.mqtt_client.sendData(data)
+            if VERBOSE > 1:
+                print("NOTE: MQTT data have been send:",data)
             # Sleep before the next poll
             time.sleep(int(self.poll_interval))
-    
+            
+    # Stop all remote connections
     def stop(self):
         self.ready_flag = False
         # logout
         self.opc_client.logout()
+        self.mqtt_client.logout()
 
 if __name__ == "__main__":
+    # Get configuration object
     params = Config("package_config.ini")
-
     # General configuration parameters
     general = params.getGeneral()
-    # Get OPC variable to readm
+    # Get OPC variables to read
     variables = params.getOpcVariables()
     # Get reading settings for variables
     settings = params.getOpcVariablesSettings()
-   
+    
+    if VERBOSE:
+        print("NOTE: Configuration has been loaded")
+
+    # Create opc and mqtt client objects 
     opc_client = OpcClient(general["opc_server"],variables,settings)
     mqtt_client = MqttClient(general["mqtt_broker"],general["topic_name"])
-    #print(opc.readData())
 
-   # print(variables)
-   # print(settings)
+    # Create control object and start process
     ctl = Control(general["polling"],opc_client,mqtt_client) 
     ctl.start()
     ctl.run()
