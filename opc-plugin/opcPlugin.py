@@ -11,7 +11,7 @@ import time
 
 ## TODO: Add Sphinx
 ## TODO: Add secure login methods
-## TODO: Local storage
+## TODO: Local storage, try opc history read feature
 
 VERBOSE=1
 
@@ -186,9 +186,10 @@ class OpcClient:
             self.subscription.delete()
 
 class MqttClient:
-    def __init__(self, broker,topic):
+    def __init__(self, broker,port,topic):
         self.broker = broker
         self.topic = topic
+        self.port = port
         self.mqtt_client = mqtt.Client(client_id="iox-app", clean_session=False)
         #self.mqtt_client.on_connect = self.on_connect
         self.mqtt_client.on_message = self.on_message
@@ -196,7 +197,7 @@ class MqttClient:
 
     def login(self):
         try:
-            self.mqtt_client.connect(host=self.broker,port=1883,keepalive=60)
+            self.mqtt_client.connect(host=self.broker,port=self.port,keepalive=60)
             self.control = Control()
         except Exception as e:
             raise Exception("MQTT broker is not available. Please check connectivity by cmd tools")
@@ -331,12 +332,18 @@ class Control(metaclass=Singleton):
             # Login
             self.opc_client.login()
             self.mqtt_client.login()
-            self.mqtt_client.subscribe()
             self.ready_flag = True
             if VERBOSE:
                 print("NOTE: MQTT and OPC connections have been established")
         except Exception as e:
             print("\033[31mError\033[0m: Unable to login to a remote server -> ", e)
+            sys.exit(1)
+        try:
+            self.mqtt_client.subscribe()
+        except Exception as e:
+            print("\033[31mError\033[0m: Unable to subscribe to a remote server -> ", e)
+            sys.exit(1)
+
     
     def run(self):
         data = {}
@@ -352,6 +359,7 @@ class Control(metaclass=Singleton):
                 time.sleep(int(self.poll_interval))
         except Exception as e:
             print("\033[31mError\033[0m: Unable to receive/send data from a remote server -> ", e)
+            sys.exit(1)
             
             
     # Stop all remote connections
@@ -366,6 +374,7 @@ class Control(metaclass=Singleton):
 
         except Exception as e:
             print("\033[31mError\033[0m: Unable to logout from a remote server -> ", e)
+            sys.exit(1)
             
 
 if __name__ == "__main__":
@@ -383,7 +392,7 @@ if __name__ == "__main__":
 
     # Create opc and mqtt client objects 
     opc_client = OpcClient(general["opc_server"],variables,settings)
-    mqtt_client = MqttClient(general["mqtt_broker"],general["topic_name"])
+    mqtt_client = MqttClient(general["mqtt_broker"],general["mqtt_port"],general["topic_name"])
 
     # Create control object and start process
     ctl = Control(general["polling"],opc_client,mqtt_client) 
