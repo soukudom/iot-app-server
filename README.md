@@ -24,13 +24,22 @@ named "credentials.yml" - this file is located in "roles/efm17x/vars/" and is en
 4. The file structure must remain exacty as provided in the entire "roles" folder for Ansible to understand it correctly
 ## EFM 1.7.2 Installation
 In order to correctly run the Ansible playbook and commence the EFM 1.7.2 installation:
-* Create a vault password file, so that you won't have to enter the password everytime you run the playbook on a target host 
+1. Create a vault password file, so that you won't have to enter the password everytime you run the playbook on a target host 
 and place the file in roles/efm17x/files
-* In the roles/efm17x/tasks folder please go through the "main.yml" and "dglux.yml" files and make the necessary changes
+2. In the roles/efm17x/tasks folder please go through the "main.yml" and "dglux.yml" files and make the necessary changes
 in each TODO section
-* In order to run the Ansible playbook the following command must be used:
+3. In order to run the Ansible playbook the following command must be used:
 "$ ansible-playbook --vault-password-file roles/efm17x/files/.vault_pass -K playbooks/efm17x_playbook.yml"
-* The -K argument will prompt you to enter the sudo password for the target hosts
+4. The -K argument will prompt you to enter the sudo password for the target hosts
+## (Optional) Demo Dashboard installation
+In order to install the demo Dashboard the steps are:
+1. Download the "server.zip" file from the provided Box link - this file is encrypted using Ansible Vault (the password is the same as for the "credentials.yml" file)
+2. Modify the Ansible playbook in order to have to correct paths to the files
+3. Run the playbook
+4. In the EFM DGLux Dashboard select: "Project" (the between "File" and "Edit") -> "Open Project" -> "Open/Import" tab -> select the project and open it
+5. In the EFM DGLux Dashboard select: "Data" -> expand "sys" -> right-click "links" -> "Rescan" and "Start All Links" 
+6. In the EFM DGLux Dashboard select: "Data" -> expand "conns" -> expand "Refinery-Simulator" -> right-click "simulator" -> select "start"
+7. You can now navigate to the "Project" tab and view the demo Dashboard with simulated data
 ## OPC/UA IOx plugin
 Edge application for gathering data from OPC/UA server and send them to a MQTT broker. To specify input parameters, use a configuration file in INI format (e.g. package_config.ini). To launch this module just run opcPlugin.py without any parameter and configuration file in the same location. Verbose mode is controlled by global variable 'VERBOSE'.
 

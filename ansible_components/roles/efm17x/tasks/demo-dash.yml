@@ -1,0 +1,31 @@
+- name: Copying demo dashboard files to host
+  copy:
+          src: full/path/to/server-v0.7.zip
+          dest: /home/efm
+          owner: dglux
+          group: dglux
+
+- name: Unpacking the archive
+  unarchive:
+          src: /home/efm/server-v0.7.zip
+          dest: /home/efm
+          owner: dglux
+          group: dglux
+          remote_src: yes
+
+- name: Copying contents of archive to server directory
+  copy:
+          src: /home/efm/dglux_server/
+          dest: /opt/cisco/kinetic/dglux_server/
+          owner: dglux
+          group: dglux
+          remote_src: yes
+
+- name: "Starting the DGLux5 server located at: https://[x.x.x.x]:9443"
+  command: ./daemon.sh "{{item}}"
+  become: yes
+  with_items:
+          - "stop"
+          - "start"
+  args:
+          chdir: /opt/cisco/kinetic/dglux_server/bin
