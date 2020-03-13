@@ -1,3 +1,7 @@
+# IoT App
+
+Fog computing app to gather and visualize data. This repository has two parts, server and edge. Server part is built on Cisco EFM that receives incoming data, processes them and visualizes them. Edge part gathers data from OPC/UA server and sends them via MQTT. The edge application is prepared for Cisco Fog computing devices as IOx package.
+All deployment tasks are done via Ansible. Below you can see a description of the build process.
 ## Getting started
 In order to get everything working as intended you first need to:
 * Download EFM 1.7.2 Windows and Linux Install packages from Cisco CCO (they come bundled in one .zip file)
@@ -27,3 +31,7 @@ in each TODO section
 * In order to run the Ansible playbook the following command must be used:
 "$ ansible-playbook --vault-password-file roles/efm17x/files/.vault_pass -K playbooks/efm17x_playbook.yml"
 * The -K argument will prompt you to enter the sudo password for the target hosts
+## OPC/UA IOx plugin
+Edge application for gathering data from OPC/UA server and send them to a MQTT broker. To specify input parameters, use a configuration file in INI format (e.g. package_config.ini). To launch this module just run opcPlugin.py without any parameter and configuration file in the same location. Verbose mode is controlled by global variable 'VERBOSE'.
+
+To compile and run this app on Cisco IoT gateways use 'ioxclient'. Further monitoring and control can be done by Cisco GMM, FND or Fog director
