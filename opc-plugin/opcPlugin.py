@@ -12,6 +12,9 @@ import time
 ## TODO: Add Sphinx
 ## TODO: Add secure login methods
 ## TODO: Local storage, try opc history read feature
+## TODO: Add a method to create opc/variable
+## TODO: Finish subscription method behavior as was discussed
+## TODO: create min max register persistent
 
 VERBOSE=1
 
@@ -197,7 +200,7 @@ class MqttClient:
 
     def login(self):
         try:
-            self.mqtt_client.connect(host=self.broker,port=self.port,keepalive=60)
+            self.mqtt_client.connect(host=self.broker,port=int(self.port),keepalive=60)
             self.control = Control()
         except Exception as e:
             raise Exception("MQTT broker is not available. Please check connectivity by cmd tools")
@@ -227,6 +230,11 @@ class MqttClient:
 
     def sendData(self,data):
         for record_key, record_val in data.items():
+            # Add timestamp in ms
+            record_val["timestamp"] = time.time()*1000
+            # Add gps -> this is temporary
+            record_val["gps_lat"] = 50.0754072
+            record_val["gps_long"] = 14.4165971
             ret = self.mqtt_client.publish(self.topic+record_key,payload=str(record_val), qos=0, retain=False)
 
     def subscribe(self):
