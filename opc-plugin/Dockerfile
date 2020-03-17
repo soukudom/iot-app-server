@@ -1,3 +1,4 @@
+#Using Cisco Docker image for IR1101 - with dev toolset for extended functionality
 FROM devhub-docker.cisco.com/iox-docker/ir1101/base-rootfs-dev
 
 RUN opkg update && opkg install python3
