@@ -1,15 +1,27 @@
-#Using Cisco Docker image for IR1101 - with dev toolset for extended functionality
-FROM devhub-docker.cisco.com/iox-docker/ir1101/base-rootfs-dev
+FROM multiarch/qemu-user-static:x86_64-aarch64 as qemu
+FROM aarch64/alpine
 
-RUN opkg update && opkg install python3
-CMD pip3 install --upgrade pip3
-CMD pip3 install opcua
-CMD pip3 install paho-mqtt
-CMD pip3 install configparser
+RUN apk update
+RUN apk add --upgrade apk-tools
+RUN apk upgrade --available
+RUN apk add --no-cache python3 && \
+    pip3 install --upgrade pip setuptools
+RUN apk add --no-cache --virtual .build-deps \
+        g++ \
+	gcc \
+	libxml2 \
+	libxml2-dev \
+	py3-lxml && \
+    apk add libxslt-dev
 
-COPY opcPlugin.py /usr/bin/opcPlugin.py
-COPY package_config.ini /usr/bin/package_config.ini
-RUN chmod 777 /usr/bin/opcPlugin.py
-RUN chmod 644 /usr/bin/package_config.ini
+COPY --from=qemu /usr/bin/qemu-aarch64-static /usr/bin
+COPY requirements.txt .
+COPY opcPlugin.py .
+COPY package_config.ini .
 
-CMD /usr/bin/opcPlugin.py
+RUN chmod 777 opcPlugin.py
+RUN chmod 644 package_config.ini
+RUN chmod 644 requirements.txt
+RUN pip3 install -r requirements.txt
+
+ENTRYPOINT python3 opcPlugin.py
