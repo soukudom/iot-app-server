@@ -1,0 +1,5 @@
+#Python3 modules required to run the OPC plugin
+lxml
+opcua
+paho-mqtt
+configparser
