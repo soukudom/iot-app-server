@@ -1,5 +1,6 @@
+FROM multiarch/qemu-user-static as qemu
 FROM arm64v8/alpine:3.7
-COPY qemu-aarch64-static /usr/bin
+COPY --from=qemu /usr/bin/qemu-aarch64-static /usr/bin
 
 RUN apk update
 RUN apk add --upgrade apk-tools
@@ -14,7 +15,6 @@ RUN apk add --no-cache --virtual .build-deps \
 	py3-lxml && \
     apk add libxslt-dev
 
-#COPY --from=qemu /usr/bin/qemu-aarch64-static /usr/bin
 COPY requirements.txt .
 COPY opcPlugin.py .
 COPY package_config.ini .
@@ -25,5 +25,3 @@ RUN chmod 644 requirements.txt
 RUN pip3 install -r requirements.txt
 
 ENTRYPOINT python3 opcPlugin.py
-
-
