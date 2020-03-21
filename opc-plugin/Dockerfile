@@ -24,4 +24,4 @@ RUN chmod 644 package_config.ini
 RUN chmod 644 requirements.txt
 RUN pip3 install -r requirements.txt
 
-ENTRYPOINT python3 opcPlugin.py
+#ENTRYPOINT python3 opcPlugin.py
