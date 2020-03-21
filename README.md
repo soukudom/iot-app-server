@@ -45,8 +45,8 @@ In order to install the demo Dashboard the steps are:
 ## OPC/UA IOx plugin
 Edge application for gathering data from OPC/UA server and send them to a MQTT broker. To specify input parameters, use a configuration file in INI format (e.g. package_config.ini). To launch this module just run opcPlugin.py without any parameter and configuration file in the same location. Verbose mode is controlled by global variable 'VERBOSE'.
 In order to package this app and upload it to Cisco Kinetic GMM, the following steps have to be taken:
-1. Make sure the "Dockerfile" is in the same directory as "opcPlugin.py", "package_config.ini" and "packaging.sh"
-2. Run the "packaging.sh" bash script and it will create a Docker container and then package it into a "package.tar" (using ioxclient) file along with a "package.yaml" file
+1. Make sure the "Dockerfile" is in the same directory as "opcPlugin.py", "package_config.ini", "packaging.sh", and "requirements.txt"
+2. Run the "packaging.sh" bash script and it will create a Docker container, create a directory and inside it package the container using "ioxclient". After packaging is complete, a "package.tar" file will be placed inside the previously created directory 
 3. Upload the "package.tar" to the Cisco Kinetic GMM
 
 
