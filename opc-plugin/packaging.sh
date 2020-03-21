@@ -8,10 +8,12 @@ if [ -f "$FILE1" -a -f "$FILE2" -a -f "$FILE3" -a -f "$FILE4" ]; then
 	echo "$FILE1"
 	echo "$FILE2"
 	echo "$FILE3"
-        echo "$FILE4"
+	echo "$FILE4"
 	echo "are present. Commencing packaging"
-        docker build -t iox-opcua-app:1.0 .
-		docker save -o rootfs.img iox-opcua-app:1.0
+	docker build -t iox-opcua-app:1.0 .
+	rm -rf iox-opc-aarch64 && mkdir iox-opc-aarch64
+	docker save -o rootfs.tar iox-opcua-app:1.0
+	mv rootfs.tar iox-opc-aarch64/
 else
 	echo "One or more of the files not present. Cannot create container"
 fi
@@ -33,10 +35,10 @@ app:
     profile: c1.tiny
 
   startup:
-    rootfs: rootfs.img
+    rootfs: rootfs.tar
     target: "opcPlugin.py"' > package.yaml
 
-#mv package.yaml iox-opc-aarch64/
+mv package.yaml iox-opc-aarch64/
 
-ioxclient docker package rootfs.img .
+ioxclient package iox-opc-aarch64 .
 echo 'IOx Application Package tar file created. Ready to upload to Cisco Kinetic GMM'
