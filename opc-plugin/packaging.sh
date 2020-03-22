@@ -22,10 +22,10 @@ echo 'descriptor-schema-version: "2.7"
 
 info:
   name: "iox_opc_app"
-  description: "simple docker plc polling app"
+  description: "OPC/UA to MQTT plugin"
   version: "1.0"
   author-link: "http://www.cisco.com"
-  author-name: "Dominik Soukup"
+  author-name: "CSAP Tiger Team"
 
 app:
   cpuarch: "aarch64"
