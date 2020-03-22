@@ -195,9 +195,9 @@ class OpcClient:
 
 class MqttClient:
     def __init__(self, broker,port,topic):
-        self.broker = broker
-        self.topic = topic
-        self.port = port
+        self.broker = str(broker)
+        self.topic = str(topic)
+        self.port = int(port)
         self.mqtt_client = mqtt.Client(client_id="iox-app", clean_session=False)
         #self.mqtt_client.on_connect = self.on_connect
         self.mqtt_client.on_message = self.on_message
@@ -405,7 +405,7 @@ class Control(metaclass=Singleton):
 
 if __name__ == "__main__":
     # Get configuration object
-    params = Config("package_config.ini")
+    params = Config("/data/package_config.ini")
     # General configuration parameters
     general = params.getGeneral()
     # Get OPC variables to read
@@ -414,7 +414,7 @@ if __name__ == "__main__":
     settings = params.getOpcVariablesSettings()
     
     #Set logging:
-    logging.basicConfig(filename=general["log_file"],level=logging.DEBUG)
+    logging.basicConfig(filename=/data/logs/general["log_file"],level=logging.DEBUG)
     #if VERBOSE:
     #    print("NOTE: Configuration has been loaded")
     logging.debug("Configuration has been loaded")
