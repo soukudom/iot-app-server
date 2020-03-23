@@ -1,9 +1,9 @@
 #!/bin/bash
 
-FILE1=/c/Simac/IOx/iot-app-server/opc-plugin/Dockerfile
-FILE2=/c/Simac/IOx/iot-app-server/opc-plugin/opcPlugin.py
-FILE3=/c/Simac/IOx/iot-app-server/opc-plugin/package_config.ini
-FILE4=/c/Simac/IOx/iot-app-server/opc-plugin/requirements.txt
+FILE1=full/path/to/iot-app-server/opc-plugin/Dockerfile
+FILE2=full/path/to/iot-app-server/opc-plugin/opcPlugin.py
+FILE3=full/path/to/iot-app-server/opc-plugin/package_config.ini
+FILE4=full/path/to/iot-app-server/opc-plugin/requirements.txt
 if [ -f "$FILE1" -a -f "$FILE2" -a -f "$FILE3" -a -f "$FILE4" ]; then
 	echo "$FILE1"
 	echo "$FILE2"
