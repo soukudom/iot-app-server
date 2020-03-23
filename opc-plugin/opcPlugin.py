@@ -130,8 +130,7 @@ class OpcClient:
                                 data[key]["register_max"] = self.registers[key]["max"]
                             else:
                                 #print("\033[31mError\033[0m: Invalid option for register parameter in the configuration file")
-                                logging.error("Invalid option for register parameter i
-    n the configuration file")
+                                logging.error("Invalid option for register parameter in the configuration file")
                     if param_key == "state" and self.init:
                         # Create subription
                         self.createSubscription(val)
@@ -255,7 +254,7 @@ class MqttClient:
 
         #if VERBOSE:
         #    print("NOTE: MQTT topic '",self.topic+"commnad","' has been subscribed")
-        debug.info("MQTT topic '",self.topic+"commnad","' has been subscribed)
+        logging.debug("MQTT topic '",self.topic+" has been subscribed")
    
  
 # Class to parse configuration data        
@@ -377,7 +376,7 @@ class Control(metaclass=Singleton):
                 self.mqtt_client.sendData(data)
                 #if VERBOSE > 1:
                 #    print("NOTE: MQTT data have been send:",data)
-                logging.debug("MQTT data have been send -> " + data)
+                logging.debug("MQTT data have been send -> " + str(data))
                 # Sleep before the next poll
                 time.sleep(int(self.poll_interval))
         except Exception as e:
@@ -414,7 +413,11 @@ if __name__ == "__main__":
     settings = params.getOpcVariablesSettings()
     
     #Set logging:
-    logging.basicConfig(filename=/data/logs/general["log_file"],level=logging.DEBUG)
+    debug = str(general["debug"])
+    if debug == "True":
+        logging.basicConfig(filename=/data/logs/general["log_file"],level=logging.DEBUG)
+    else:
+        logging.basicConfig(filename=/data/logs/general["log_file"],level=logging.WARNING)
     #if VERBOSE:
     #    print("NOTE: Configuration has been loaded")
     logging.debug("Configuration has been loaded")
@@ -422,7 +425,7 @@ if __name__ == "__main__":
     # Create opc and mqtt client objects 
     opc_client = OpcClient(general["opc_server"],variables,settings)
     mqtt_client = MqttClient(general["mqtt_broker"],general["mqtt_port"],general["topic_name"])
-    log.debug("OPC and MQTT objects has been created")
+    logging.debug("OPC and MQTT objects has been created")
 
     # Create control object and start process
     ctl = Control(general["polling"],opc_client,mqtt_client) 
