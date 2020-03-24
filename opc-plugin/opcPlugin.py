@@ -254,7 +254,7 @@ class MqttClient:
 
         #if VERBOSE:
         #    print("NOTE: MQTT topic '",self.topic+"commnad","' has been subscribed")
-        logging.debug("MQTT topic '",self.topic+" has been subscribed")
+        logging.debug("MQTT topic "+self.topic+" has been subscribed")
    
  
 # Class to parse configuration data        
@@ -415,9 +415,9 @@ if __name__ == "__main__":
     #Set logging:
     debug = str(general["debug"])
     if debug == "True":
-        logging.basicConfig(filename=/data/logs/general["log_file"],level=logging.DEBUG)
+        logging.basicConfig(filename="/data/logs/"+general["log_file"],level=logging.DEBUG)
     else:
-        logging.basicConfig(filename=/data/logs/general["log_file"],level=logging.WARNING)
+        logging.basicConfig(filename="/data/logs/"+general["log_file"],level=logging.WARNING)
     #if VERBOSE:
     #    print("NOTE: Configuration has been loaded")
     logging.debug("Configuration has been loaded")
