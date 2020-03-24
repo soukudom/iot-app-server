@@ -25,19 +25,22 @@ info:
   description: "simple docker plc polling app"
   version: "1.0"
   author-link: "http://www.cisco.com"
-  author-name: "Dominik Soukup"
+  author-name: "Cisco DevNet"
 
 app:
   cpuarch: "aarch64"
   type: "docker"
   resources:
     profile: c1.tiny
+    network:
+      - interface-name: eth0
+        ports: {}
 
   startup:
     rootfs: rootfs.tar
     target: ["python3","/opcPlugin.py"]' > package.yaml
 
 mv package.yaml iox-opc-aarch64/
-
-ioxclient package iox-opc-aarch64 .
+cp package_config.ini iox-opc-aarch64
+ioxclient package iox-opc-aarch64
 echo 'IOx Application Package tar file created. Ready to upload to Cisco Kinetic GMM'
