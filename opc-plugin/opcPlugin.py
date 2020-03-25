@@ -78,6 +78,7 @@ class OpcClient:
             self.registers[key] = {}
             self.registers[key]["min"] = None
             self.registers[key]["max"] = None
+            self.registers[key]["register_timestamp"] = None
 
         try:
             self.client = Client(self.opc_url) 
@@ -97,7 +98,15 @@ class OpcClient:
         #    print("NOTE: logout form OPC/UA server")
         logging.info("Logout form OPC/UA server")
 
-    # TODO: Create support for more status variable -> right now the self.init flag is a limitation
+    # Cleair value of local registers
+    def clearRegister(self, name):
+        logging.info("Clear register called for the name ", name)
+        #self.registers[name]["min"] = None
+        #self.registers[name]["max"] = None
+        #self.registers[name]["register_timestamp"] = None
+        
+
+    # TODO: Create support for more status variables -> right now the self.init flag is a limitation
     def pollData(self):
         data = {}
         for key, val in self.variables.items():
@@ -107,6 +116,7 @@ class OpcClient:
             data[key]["role"] = "normal"
             data[key]["register_min"] = "n/a"
             data[key]["register_max"] = "n/a"
+            data[key]["register_timestamp"] = "n/a"
             # Custom configuration parameters
             try:
                 for param_key, param_val in self.settings[key].items():
@@ -118,16 +128,28 @@ class OpcClient:
                                 # Check and init the first value
                                 if self.registers[key]["min"] == None:
                                     self.registers[key]["min"] = data[key]["value"]
+                                    # Add timestmap for registers
+                                    if self.registers["register_timestamp"] == None:
+                                        self.registers["register_timestamp"] = time.time()*1000
+                                        data[key]["register_timestamp"] = time.time()*1000
+
                                 elif int(self.registers[key]["min"]) > int(data[key]["value"]):
                                     self.registers[key]["min"] = data[key]["value"]
                                 data[key]["register_min"] = self.registers[key]["min"]
+                                data[key]["register_timestamp"] = self.registers[key]["register_timestamp"]
                             elif config_param == "max":
                                 # Check and init the first value
                                 if self.registers[key]["max"] == None:
                                     self.registers[key]["max"] = data[key]["value"]
+                                    # Add timestmap for registers
+                                    if self.registers["register_timestamp"] == None:
+                                        self.registers["register_timestamp"] = time.time()*1000
+                                        data[key]["register_timestamp"] = time.time()*1000
+
                                 elif int(self.registers[key]["max"]) < int(data[key]["value"]):
                                     self.registers[key]["max"] = data[key]["value"]
                                 data[key]["register_max"] = self.registers[key]["max"]
+                                data[key]["register_timestamp"] = self.registers[key]["register_timestamp"]
                             else:
                                 #print("\033[31mError\033[0m: Invalid option for register parameter in the configuration file")
                                 logging.error("Invalid option for register parameter in the configuration file")
@@ -228,7 +250,8 @@ class MqttClient:
             if cmd_key == "poll":
                 self.control.poll_interval = cmd_val
             elif cmd_key == "clear":
-                pass
+                logging.info("RECEIVED CMD: "+cmd_val)
+                self.control.opc_client.clearRegister("name")
             else:
                 print("\033[31mError\033[0m: Unknown command")
                 logging.error("Unknown command from MQTT")
