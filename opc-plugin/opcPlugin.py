@@ -98,12 +98,11 @@ class OpcClient:
         #    print("NOTE: logout form OPC/UA server")
         logging.info("Logout form OPC/UA server")
 
-    # Cleair value of local registers
+    # Clear value of local registers
     def clearRegister(self, name):
-        logging.info("Clear register called for the name ", name)
-        #self.registers[name]["min"] = None
-        #self.registers[name]["max"] = None
-        #self.registers[name]["register_timestamp"] = None
+        self.registers[name]["min"] = None
+        self.registers[name]["max"] = None
+        self.registers[name]["register_timestamp"] = None
         
 
     # TODO: Create support for more status variables -> right now the self.init flag is a limitation
@@ -129,8 +128,8 @@ class OpcClient:
                                 if self.registers[key]["min"] == None:
                                     self.registers[key]["min"] = data[key]["value"]
                                     # Add timestmap for registers
-                                    if self.registers["register_timestamp"] == None:
-                                        self.registers["register_timestamp"] = time.time()*1000
+                                    if self.registers[key]["register_timestamp"] == None:
+                                        self.registers[key]["register_timestamp"] = time.time()*1000
                                         data[key]["register_timestamp"] = time.time()*1000
 
                                 elif int(self.registers[key]["min"]) > int(data[key]["value"]):
@@ -142,8 +141,8 @@ class OpcClient:
                                 if self.registers[key]["max"] == None:
                                     self.registers[key]["max"] = data[key]["value"]
                                     # Add timestmap for registers
-                                    if self.registers["register_timestamp"] == None:
-                                        self.registers["register_timestamp"] = time.time()*1000
+                                    if self.registers[key]["register_timestamp"] == None:
+                                        self.registers[key]["register_timestamp"] = time.time()*1000
                                         data[key]["register_timestamp"] = time.time()*1000
 
                                 elif int(self.registers[key]["max"]) < int(data[key]["value"]):
@@ -241,19 +240,16 @@ class MqttClient:
         logging.info("MQTT client is disconnected from the broker" + self.broker)
 
     def on_message(self,client, data, msg):
-        #if VERBOSE: 
-        #    print("NOTE: MQTT data have been received:",msg.topic+" "+str(msg.payload))
-        logging.info("MQTT data have been received:",msg.topic+" "+str(msg.payload))
-
         payload_data = json.loads(str(msg.payload.decode()))
         for cmd_key, cmd_val in payload_data.items():
             if cmd_key == "poll":
+                logging.info("Received command from the server: "+cmd_key+":"+cmd_val)
                 self.control.poll_interval = cmd_val
             elif cmd_key == "clear":
-                logging.info("RECEIVED CMD: "+cmd_val)
-                self.control.opc_client.clearRegister("name")
+                logging.info("Received command from the server: "+cmd_key+":"+cmd_val)
+                self.control.opc_client.clearRegister(cmd_val)
             else:
-                print("\033[31mError\033[0m: Unknown command")
+                #print("\033[31mError\033[0m: Unknown command")
                 logging.error("Unknown command from MQTT")
                 
 
