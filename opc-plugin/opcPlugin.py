@@ -15,7 +15,6 @@ import time
 ## TODO: Finish subscription method behavior as was discussed
 ## TODO: create min max register persistent
 
-VERBOSE=1
 
 class SubHandler(object):
     """
@@ -85,8 +84,6 @@ class OpcClient:
             self.client.connect()
         except Exception as e:
             raise Exception("OPC/UA server is not available. Please check connectivity by cmd tools")
-        #if VERBOSE:
-        #    print("NOTE: client connected to a OPC/UA server",self.opc_url)
         logging.info("Client connected to a OPC/UA server" + str(self.opc_url))
         
     def logout(self):
@@ -94,8 +91,6 @@ class OpcClient:
             self.client.disconnect()
         except Exception as e:
             raise Exception("OPC/UA server is not available for logout command. Please check connectivity by cmd tools")
-        #if VERBOSE:
-        #    print("NOTE: logout form OPC/UA server")
         logging.info("Logout form OPC/UA server")
 
     # Clear value of local registers
@@ -177,7 +172,6 @@ class OpcClient:
             return data
 
         except Exception as e:
-            #print("\033[31mError\033[0m: Unable to read OPC/UA server data -> '{}'".format(e))
             logging.error("Unable to read OPC/UA server data ->" + str(e))
             sys.exit(1)
 
@@ -191,8 +185,6 @@ class OpcClient:
         except Exception as e:
             raise Exception("Unable to create subscription to OPC/UA server address", address)
 
-        #if VERBOSE:
-        #    print("NOTE: Subscription created for address ",address)
         logging.info("Subscription created for address " + address)
 
     def unsubscribeSubscriptions(self, address=None):
@@ -229,14 +221,10 @@ class MqttClient:
             self.control = Control()
         except Exception as e:
             raise Exception("MQTT broker is not available. Please check connectivity by cmd tools")
-        #if VERBOSE:
-        #    print("NOTE: MQTT client is connected to the broker",self.broker)
         logging.info("MQTT client is connected to the broker" + self.broker)
     
     def logout(self):
         self.mqtt_client.disconnect()
-        #if VERBOSE:
-        #    print("NOTE: MQTT client is disconnected from the broker", self.broker)
         logging.info("MQTT client is disconnected from the broker" + self.broker)
 
     def on_message(self,client, data, msg):
@@ -249,11 +237,8 @@ class MqttClient:
                 logging.info("Received command from the server: "+cmd_key+":"+cmd_val)
                 self.control.opc_client.clearRegister(cmd_val)
             else:
-                #print("\033[31mError\033[0m: Unknown command")
                 logging.error("Unknown command from MQTT")
                 
-
-        #print("val is",val["comm"])
 
     def sendData(self,data):
         for record_key, record_val in data.items():
@@ -271,8 +256,6 @@ class MqttClient:
         except Exception as e:
             raise Exception("Unable to subscribe topic",self.topic+"command")
 
-        #if VERBOSE:
-        #    print("NOTE: MQTT topic '",self.topic+"commnad","' has been subscribed")
         logging.debug("MQTT topic "+self.topic+" has been subscribed")
    
  
@@ -314,7 +297,6 @@ class Config:
                 raise Exception("Topic name must end with '/'")
             
         except Exception as e:
-            #print("\033[31mError\033[0m: Missing mandatory General section or General parameters in the configuration file or parameters are not formated well -> ", e)
             logging.error("Missing mandatory General section or General parameters in     the configuration file or parameters are not formated well -> "+ str(e))
     
             
@@ -340,11 +322,11 @@ class Config:
         for section in sections:
             for key,val in self.config[section].items():
                 try:    
-                    settings[section][key] = val #self.config[section]
+                    settings[section][key] = val 
                 # Create a first record
                 except Exception as e:
                     settings[section] = {}
-                    settings[section][key] = val #self.config[section]
+                    settings[section][key] = val 
         return settings
 
 # Metaclass for singleton pattern
@@ -371,8 +353,6 @@ class Control(metaclass=Singleton):
             self.mqtt_client.login()
             self.ready_flag = True
             logging.info("MQTT and OPC connections have been established")
-            #if VERBOSE:
-            #    print("NOTE: MQTT and OPC connections have been established")
         except Exception as e:
             #print("\033[31mError\033[0m: Unable to login to a remote server -> ", e)
             logging.error("Unable to login to a remote server -> " + str(e))
@@ -381,7 +361,6 @@ class Control(metaclass=Singleton):
             self.mqtt_client.subscribe()
         except Exception as e:
             logging.error("Unable to subscribe to a remote server -> " + str(e))
-            #print("\033[31mError\033[0m: Unable to subscribe to a remote server -> ", e)
             sys.exit(1)
 
     
@@ -393,13 +372,10 @@ class Control(metaclass=Singleton):
                 data = self.opc_client.pollData()
                 # Send them via MQTT
                 self.mqtt_client.sendData(data)
-                #if VERBOSE > 1:
-                #    print("NOTE: MQTT data have been send:",data)
                 logging.debug("MQTT data have been send -> " + str(data))
                 # Sleep before the next poll
                 time.sleep(int(self.poll_interval))
         except Exception as e:
-            #print("\033[31mError\033[0m: Unable to receive/send data from a remote server -> ", e)
             logging.error("Unable to receive/send data from a remote server -> "+ str(e))
             sys.exit(1)
             
@@ -411,12 +387,9 @@ class Control(metaclass=Singleton):
             # Logout
             self.opc_client.logout()
             self.mqtt_client.logout()
-            #if VERBOSE:
-            #    print("NOTE: MQTT and OPC connection have been closed")
             logging.info("MQTT and OPC connection have been closed")
 
         except Exception as e:
-            #print("\033[31mError\033[0m: Unable to logout from a remote server -> ", e)
             logging.error("Unable to logout from a remote server -> " + str(e))
             sys.exit(1)
             
@@ -437,8 +410,6 @@ if __name__ == "__main__":
         logging.basicConfig(filename="/data/logs/"+general["log_file"],level=logging.DEBUG)
     else:
         logging.basicConfig(filename="/data/logs/"+general["log_file"],level=logging.WARNING)
-    #if VERBOSE:
-    #    print("NOTE: Configuration has been loaded")
     logging.debug("Configuration has been loaded")
 
     # Create opc and mqtt client objects 
