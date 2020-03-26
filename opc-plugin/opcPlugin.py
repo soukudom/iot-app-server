@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 import configparser
-
 from opcua import Client
 from opcua import ua
 import paho.mqtt.client as mqtt
 import json
-
+import logging
 import sys
 import time
 
 ## TODO: Add Sphinx
 ## TODO: Add secure login methods
 ## TODO: Local storage, try opc history read feature
+## TODO: Add a method to create opc/variable
+## TODO: Finish subscription method behavior as was discussed
+## TODO: create min max register persistent
 
-VERBOSE=1
 
 class SubHandler(object):
     """
@@ -76,24 +77,30 @@ class OpcClient:
             self.registers[key] = {}
             self.registers[key]["min"] = None
             self.registers[key]["max"] = None
+            self.registers[key]["register_timestamp"] = None
 
         try:
             self.client = Client(self.opc_url) 
             self.client.connect()
         except Exception as e:
             raise Exception("OPC/UA server is not available. Please check connectivity by cmd tools")
-        if VERBOSE:
-            print("NOTE: client connected to a OPC/UA server",self.opc_url)
+        logging.info("Client connected to a OPC/UA server" + str(self.opc_url))
         
     def logout(self):
         try:
             self.client.disconnect()
         except Exception as e:
             raise Exception("OPC/UA server is not available for logout command. Please check connectivity by cmd tools")
-        if VERBOSE:
-            print("NOTE: logout form OPC/UA server")
+        logging.info("Logout form OPC/UA server")
 
-    # TODO: Create support for more status variable -> right now the self.init flag is a limitation
+    # Clear value of local registers
+    def clearRegister(self, name):
+        self.registers[name]["min"] = None
+        self.registers[name]["max"] = None
+        self.registers[name]["register_timestamp"] = None
+        
+
+    # TODO: Create support for more status variables -> right now the self.init flag is a limitation
     def pollData(self):
         data = {}
         for key, val in self.variables.items():
@@ -103,6 +110,7 @@ class OpcClient:
             data[key]["role"] = "normal"
             data[key]["register_min"] = "n/a"
             data[key]["register_max"] = "n/a"
+            data[key]["register_timestamp"] = "n/a"
             # Custom configuration parameters
             try:
                 for param_key, param_val in self.settings[key].items():
@@ -114,18 +122,31 @@ class OpcClient:
                                 # Check and init the first value
                                 if self.registers[key]["min"] == None:
                                     self.registers[key]["min"] = data[key]["value"]
+                                    # Add timestmap for registers
+                                    if self.registers[key]["register_timestamp"] == None:
+                                        self.registers[key]["register_timestamp"] = time.time()*1000
+                                        data[key]["register_timestamp"] = time.time()*1000
+
                                 elif int(self.registers[key]["min"]) > int(data[key]["value"]):
                                     self.registers[key]["min"] = data[key]["value"]
                                 data[key]["register_min"] = self.registers[key]["min"]
+                                data[key]["register_timestamp"] = self.registers[key]["register_timestamp"]
                             elif config_param == "max":
                                 # Check and init the first value
                                 if self.registers[key]["max"] == None:
                                     self.registers[key]["max"] = data[key]["value"]
+                                    # Add timestmap for registers
+                                    if self.registers[key]["register_timestamp"] == None:
+                                        self.registers[key]["register_timestamp"] = time.time()*1000
+                                        data[key]["register_timestamp"] = time.time()*1000
+
                                 elif int(self.registers[key]["max"]) < int(data[key]["value"]):
                                     self.registers[key]["max"] = data[key]["value"]
                                 data[key]["register_max"] = self.registers[key]["max"]
+                                data[key]["register_timestamp"] = self.registers[key]["register_timestamp"]
                             else:
-                                print("\033[31mError\033[0m: Invalid option for register parameter in the configuration file")
+                                #print("\033[31mError\033[0m: Invalid option for register parameter in the configuration file")
+                                logging.error("Invalid option for register parameter in the configuration file")
                     if param_key == "state" and self.init:
                         # Create subription
                         self.createSubscription(val)
@@ -151,7 +172,7 @@ class OpcClient:
             return data
 
         except Exception as e:
-            print("\033[31mError\033[0m: Unable to read OPC/UA server data -> '{}'".format(e))
+            logging.error("Unable to read OPC/UA server data ->" + str(e))
             sys.exit(1)
 
     # Create a subscription and store the connection handle
@@ -164,8 +185,7 @@ class OpcClient:
         except Exception as e:
             raise Exception("Unable to create subscription to OPC/UA server address", address)
 
-        if VERBOSE:
-            print("NOTE: Subscription created for address ",address)
+        logging.info("Subscription created for address " + address)
 
     def unsubscribeSubscriptions(self, address=None):
         if len(self.handlers) == 0:
@@ -187,9 +207,9 @@ class OpcClient:
 
 class MqttClient:
     def __init__(self, broker,port,topic):
-        self.broker = broker
-        self.topic = topic
-        self.port = port
+        self.broker = str(broker)
+        self.topic = str(topic)
+        self.port = int(port)
         self.mqtt_client = mqtt.Client(client_id="iox-app", clean_session=False)
         #self.mqtt_client.on_connect = self.on_connect
         self.mqtt_client.on_message = self.on_message
@@ -197,36 +217,36 @@ class MqttClient:
 
     def login(self):
         try:
-            self.mqtt_client.connect(host=self.broker,port=self.port,keepalive=60)
+            self.mqtt_client.connect(host=self.broker,port=int(self.port),keepalive=60)
             self.control = Control()
         except Exception as e:
             raise Exception("MQTT broker is not available. Please check connectivity by cmd tools")
-        if VERBOSE:
-            print("NOTE: MQTT client is connected to the broker",self.broker)
+        logging.info("MQTT client is connected to the broker" + self.broker)
     
     def logout(self):
         self.mqtt_client.disconnect()
-        if VERBOSE:
-            print("NOTE: MQTT client is disconnected from the broker", self.broker)
+        logging.info("MQTT client is disconnected from the broker" + self.broker)
 
     def on_message(self,client, data, msg):
-        if VERBOSE: 
-            print("NOTE: MQTT data have been received:",msg.topic+" "+str(msg.payload))
-
         payload_data = json.loads(str(msg.payload.decode()))
         for cmd_key, cmd_val in payload_data.items():
             if cmd_key == "poll":
                 self.control.poll_interval = cmd_val
+                logging.info("Received command from the server: "+cmd_key+":"+cmd_val)
             elif cmd_key == "clear":
-                pass
+                self.control.opc_client.clearRegister(cmd_val)
+                logging.info("Received command from the server: "+cmd_key+":"+cmd_val)
             else:
-                print("\033[31mError\033[0m: Unknown command")
+                logging.error("Unknown command from MQTT")
                 
-
-        #print("val is",val["comm"])
 
     def sendData(self,data):
         for record_key, record_val in data.items():
+            # Add timestamp in ms
+            record_val["timestamp"] = time.time()*1000
+            # Add gps -> this is temporary
+            record_val["gps_lat"] = 50.0754072
+            record_val["gps_long"] = 14.4165971
             ret = self.mqtt_client.publish(self.topic+record_key,payload=str(record_val), qos=0, retain=False)
 
     def subscribe(self):
@@ -236,8 +256,7 @@ class MqttClient:
         except Exception as e:
             raise Exception("Unable to subscribe topic",self.topic+"command")
 
-        if VERBOSE:
-            print("NOTE MQTT topic '",self.topic+"commnad","' has been subscribed")
+        logging.debug("MQTT topic "+self.topic+" has been subscribed")
    
  
 # Class to parse configuration data        
@@ -278,13 +297,13 @@ class Config:
                 raise Exception("Topic name must end with '/'")
             
         except Exception as e:
-            print("\033[31mError\033[0m: Missing mandatory General section or General parameters in the configuration file or parameters are not formated well -> ", e)
+            logging.error("Missing mandatory General section or General parameters in     the configuration file or parameters are not formated well -> "+ str(e))
     
             
         #return self.config["general"]
         return general
    
-    # TODO: Test that string are without quotes 
+    # TODO: Test that strings are without quotes 
     # Get the variables section
     def getOpcVariables(self):
         variables = {}
@@ -303,11 +322,11 @@ class Config:
         for section in sections:
             for key,val in self.config[section].items():
                 try:    
-                    settings[section][key] = val #self.config[section]
+                    settings[section][key] = val 
                 # Create a first record
                 except Exception as e:
                     settings[section] = {}
-                    settings[section][key] = val #self.config[section]
+                    settings[section][key] = val 
         return settings
 
 # Metaclass for singleton pattern
@@ -333,15 +352,15 @@ class Control(metaclass=Singleton):
             self.opc_client.login()
             self.mqtt_client.login()
             self.ready_flag = True
-            if VERBOSE:
-                print("NOTE: MQTT and OPC connections have been established")
+            logging.info("MQTT and OPC connections have been established")
         except Exception as e:
-            print("\033[31mError\033[0m: Unable to login to a remote server -> ", e)
+            #print("\033[31mError\033[0m: Unable to login to a remote server -> ", e)
+            logging.error("Unable to login to a remote server -> " + str(e))
             sys.exit(1)
         try:
             self.mqtt_client.subscribe()
         except Exception as e:
-            print("\033[31mError\033[0m: Unable to subscribe to a remote server -> ", e)
+            logging.error("Unable to subscribe to a remote server -> " + str(e))
             sys.exit(1)
 
     
@@ -353,12 +372,11 @@ class Control(metaclass=Singleton):
                 data = self.opc_client.pollData()
                 # Send them via MQTT
                 self.mqtt_client.sendData(data)
-                if VERBOSE > 1:
-                    print("NOTE: MQTT data have been send:",data)
+                logging.debug("MQTT data have been send -> " + str(data))
                 # Sleep before the next poll
                 time.sleep(int(self.poll_interval))
         except Exception as e:
-            print("\033[31mError\033[0m: Unable to receive/send data from a remote server -> ", e)
+            logging.error("Unable to receive/send data from a remote server -> "+ str(e))
             sys.exit(1)
             
             
@@ -369,17 +387,16 @@ class Control(metaclass=Singleton):
             # Logout
             self.opc_client.logout()
             self.mqtt_client.logout()
-            if VERBOSE:
-                print("NOTE: MQTT and OPC connection have been closed")
+            logging.info("MQTT and OPC connection have been closed")
 
         except Exception as e:
-            print("\033[31mError\033[0m: Unable to logout from a remote server -> ", e)
+            logging.error("Unable to logout from a remote server -> " + str(e))
             sys.exit(1)
             
 
 if __name__ == "__main__":
     # Get configuration object
-    params = Config("package_config.ini")
+    params = Config("/data/package_config.ini")
     # General configuration parameters
     general = params.getGeneral()
     # Get OPC variables to read
@@ -387,17 +404,26 @@ if __name__ == "__main__":
     # Get reading settings for variables
     settings = params.getOpcVariablesSettings()
     
-    if VERBOSE:
-        print("NOTE: Configuration has been loaded")
+    #Set logging:
+    debug = str(general["debug"])
+    if debug == "True":
+        logging.basicConfig(filename="/data/logs/"+general["log_file"],level=logging.DEBUG)
+    else:
+        logging.basicConfig(filename="/data/logs/"+general["log_file"],level=logging.WARNING)
+    logging.debug("Configuration has been loaded")
 
     # Create opc and mqtt client objects 
     opc_client = OpcClient(general["opc_server"],variables,settings)
     mqtt_client = MqttClient(general["mqtt_broker"],general["mqtt_port"],general["topic_name"])
+    logging.debug("OPC and MQTT objects has been created")
 
     # Create control object and start process
     ctl = Control(general["polling"],opc_client,mqtt_client) 
+    logging.debug("Control object has been created")
     ctl.start()
+    logging.debug("Control object has started")
     ctl.run()
+    logging.debug("Control object is running")
         
 
     
