@@ -231,11 +231,11 @@ class MqttClient:
         payload_data = json.loads(str(msg.payload.decode()))
         for cmd_key, cmd_val in payload_data.items():
             if cmd_key == "poll":
-                logging.info("Received command from the server: "+cmd_key+":"+cmd_val)
                 self.control.poll_interval = cmd_val
-            elif cmd_key == "clear":
                 logging.info("Received command from the server: "+cmd_key+":"+cmd_val)
+            elif cmd_key == "clear":
                 self.control.opc_client.clearRegister(cmd_val)
+                logging.info("Received command from the server: "+cmd_key+":"+cmd_val)
             else:
                 logging.error("Unknown command from MQTT")
                 
