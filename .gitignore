@@ -39,4 +39,7 @@
 **/__pycache__
 
 # Ansbile Vault
-* .vault_pass
+*.vault_pass
+
+# VS Code
+*.vscode
