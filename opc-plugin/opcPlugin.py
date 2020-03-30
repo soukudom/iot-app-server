@@ -48,11 +48,6 @@ class SubHandler(object):
             self.nodes[node] = val
             self.checkProcess(node,val)
             
-    # Event notification callback
-    #def event_notification(self, event):
-    #    print("OPC/UA: New event", event)
-
-
 class OpcClient:
     def __init__(self, opc_url, variables, settings):
         # OPC/UA server url
