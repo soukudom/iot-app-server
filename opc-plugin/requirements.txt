@@ -3,3 +3,4 @@ lxml
 opcua
 paho-mqtt
 configparser
+pysnmp
