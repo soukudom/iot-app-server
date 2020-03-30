@@ -200,10 +200,10 @@ class SnmpClient:
                     "longtitude": "iso.3.6.1.4.1.9.9.661.1.4.1.1.1.5.4038",
                     "timestamp": "iso.3.6.1.4.1.9.9.661.1.4.1.1.1.6.4038"
                     }
-        coordinates = {"latitude":0,"longtitude":0,"timestamp":0}
 
     # Get GPS coordinates from IR1101 Cellular module
-    def getCoordinates()
+    def getCoordinates(self):
+        coordinates = {"latitude":0,"longtitude":0,"timestamp":0}
         for key,val in self.oid.items():
             iterator = getCmd(SnmpEngine(),
                     CommunityData(self.community),
@@ -260,12 +260,13 @@ class MqttClient:
 
     # Send MQTT data to the broker
     def sendData(self,data):
+        # Add GPS 
+        gps_data = self.snmp_client.getCoordinates()
+        # Prepare data records for each OPC/UA variable
         for record_key, record_val in data.items():
             # Add timestamp in ms
             # NOTE: Maybe it is better to use time from GPS
             record_val["timestamp"] = time.time()*1000
-            # Add GPS 
-            gps_data = snmp_client.getCoordinates()
             # Latitude - check if GPS is working if not add the static value -> Charles Square, Prague, CZE
             if gps_data["latitude"][4] == "0":
                 record_val["gps_lat"] = 50.0754072
@@ -371,7 +372,7 @@ class Singleton(type):
 
 # The main class to control the whole flow
 class Control(metaclass=Singleton):
-    def __init__(self, poll_interval=5, poll_change, opc_client=None, mqtt_client=None):
+    def __init__(self, poll_interval=5, poll_change=1, opc_client=None, mqtt_client=None):
         self.poll_interval = int(poll_interval) 
         self.poll_change = int(poll_change)
         self.poll_normal = int(poll_interval)
