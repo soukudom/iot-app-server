@@ -8,12 +8,10 @@ import logging
 import sys
 import time
 from pysnmp.hlapi import *
+import shelve
 
 ## TODO: Add Sphinx
 ## TODO: Add secure login methods
-## TODO: Local storage, try opc history read feature
-## TODO: create min max register persistent
-
 
 # Handler class for OPC/UA events
 class SubHandler(object):
@@ -52,7 +50,7 @@ class SubHandler(object):
             
 # OpcClient class to handle all OPC/UA communication 
 class OpcClient:
-    def __init__(self, opc_url, variables, settings):
+    def __init__(self, opc_url, variables, settings, persistency, history_length):
         # OPC/UA server url
         self.opc_url = opc_url
         # OPC/UA variables addresses
@@ -68,6 +66,10 @@ class OpcClient:
         self.registers = {}
         # State flag
         self.init = True
+        # Persistency flag
+        self.persistency = persistency
+        # History length allocation
+        self.history_length = int(history_length)
 
     # Create session to the OPC/UA server
     def login(self):
@@ -99,7 +101,36 @@ class OpcClient:
         self.registers[name]["min"] = None
         self.registers[name]["max"] = None
         self.registers[name]["register_timestamp"] = None
-        
+
+    # Store data persistently
+    def storeData(self,data,key):
+        pd = shelve.open(self.persist_data)
+        try:
+            tmp_value = data["value"]
+            old_persist_value = pd[key]["value"]
+            # Check lenght of stored data
+            if len(old_persist_value) <= self.history_length:
+                data["value"] = old_persist_value.append(tmp_value)
+                pd[key] = data 
+            else:
+                # Remove the oldest value
+                old_persist_value.pop(0)
+                data["value"] = old_persist_value.append(tmp_value)
+                pd[key] = data 
+                
+        except Exception as e:
+            # Init data structure for the key
+            data["value"] = [data["value"]]
+            pd[key] = data
+
+        pd.close()
+
+    # Return stored persistent data
+    def getStoredData(self, key):
+        pd = shelve.open(self.persist_data)
+        data = pd.get(key)
+        pd.close()
+        return data
 
     # TODO: Create support for more status variables -> right now the self.init flag is a limitation
     # Read data from OPC/UA server from predifined variables
@@ -157,6 +188,9 @@ class OpcClient:
             # Key for specific configuration does not exist
             except Exception as e:
                 pass
+
+            if self.persistency == "True":
+                storeData(data[key],key)
 
         return data
          
@@ -255,6 +289,11 @@ class MqttClient:
             elif cmd_key == "clear":
                 self.control.opc_client.clearRegister(cmd_val)
                 logging.info("Received command from the server: "+cmd_key+":"+cmd_val)
+            elif cmd_key == "getData":
+                data = self.control.opc_client.getStoredData(cmd_val)
+                logging.info("Received command from the server: "+cmd_key+":"+cmd_val)
+                self.mqtt_client.publish(self.topic+cmd_val+"/storedData",payload=str(data), qos=0, retain=False)
+                logging.info("Command reply sent back: ")
             else:
                 logging.error("Unknown command from MQTT")
 
@@ -329,7 +368,7 @@ class Config:
             tmp = general["topic_name"]
             if tmp[-1] != "/":
                 raise Exception("Topic name must end with '/'")
-            
+
         except Exception as e:
             logging.error("Missing mandatory General section or General parameters in     the configuration file or parameters are not formated well -> "+ str(e))
     
@@ -457,7 +496,7 @@ if __name__ == "__main__":
 
     # Create opc, snmp mqtt client objects 
     snmp_client = SnmpClient(general["gw_ip"],general["community"])
-    opc_client = OpcClient(general["opc_server"],variables,settings)
+    opc_client = OpcClient(general["opc_server"],variables,settings,general["persistency"],general["history_length"])
     mqtt_client = MqttClient(general["mqtt_broker"],general["mqtt_port"],general["topic_name"],snmp_client)
     logging.debug("OPC and MQTT objects has been created")
 
