@@ -7,15 +7,15 @@ import json
 import logging
 import sys
 import time
+from pysnmp.hlapi import *
 
 ## TODO: Add Sphinx
 ## TODO: Add secure login methods
 ## TODO: Local storage, try opc history read feature
-## TODO: Add a method to create opc/variable
-## TODO: Finish subscription method behavior as was discussed
 ## TODO: create min max register persistent
 
 
+# Handler class for OPC/UA events
 class SubHandler(object):
     """
     Subscription Handler. To receive events from server for a subscription
@@ -24,21 +24,23 @@ class SubHandler(object):
     thread if you need to do such a thing
     """
     def __init__(self):
+        # Singelton instance of the main controll class
         self.control = Control()
+        # Dict of status nodes -> remembers the last value to decide
         self.nodes = {}
 
+    # Check if PLC workload is running
     def checkProcess(self,node,val):
         if val == 0:
-            # Process have stopped => read slower
-            #print("Process stop")
-            pass
+            # Process have stopped => reset/slow down polling interval 
+            self.control.resetPollInterval(self)
         else:
-            # Process have started => read faster
-            #print("Process start")
-            pass
+            # Process have started => change/speed up polling interval
+            self.control.changePollInterval()
 
+    # Datachange event from the OPC/UA server
     def datachange_notification(self, node, val, data):
-        #print("OPC/UA: New data change event", node, val,type(data),data)
+        #debug example: print("OPC/UA: New data change event", node, val,type(data),data)
 
         if node in self.nodes:
             # Check control value
@@ -48,11 +50,7 @@ class SubHandler(object):
             self.nodes[node] = val
             self.checkProcess(node,val)
             
-    # Event notification callback
-    #def event_notification(self, event):
-    #    print("OPC/UA: New event", event)
-
-
+# OpcClient class to handle all OPC/UA communication 
 class OpcClient:
     def __init__(self, opc_url, variables, settings):
         # OPC/UA server url
@@ -71,6 +69,7 @@ class OpcClient:
         # State flag
         self.init = True
 
+    # Create session to the OPC/UA server
     def login(self):
         # Init local registers
         for key, val in self.variables.items():
@@ -79,6 +78,7 @@ class OpcClient:
             self.registers[key]["max"] = None
             self.registers[key]["register_timestamp"] = None
 
+        # Create session
         try:
             self.client = Client(self.opc_url) 
             self.client.connect()
@@ -86,6 +86,7 @@ class OpcClient:
             raise Exception("OPC/UA server is not available. Please check connectivity by cmd tools")
         logging.info("Client connected to a OPC/UA server" + str(self.opc_url))
         
+    # Logout from the OPC/UA server
     def logout(self):
         try:
             self.client.disconnect()
@@ -101,6 +102,7 @@ class OpcClient:
         
 
     # TODO: Create support for more status variables -> right now the self.init flag is a limitation
+    # Read data from OPC/UA server from predifined variables
     def pollData(self):
         data = {}
         for key, val in self.variables.items():
@@ -145,7 +147,6 @@ class OpcClient:
                                 data[key]["register_max"] = self.registers[key]["max"]
                                 data[key]["register_timestamp"] = self.registers[key]["register_timestamp"]
                             else:
-                                #print("\033[31mError\033[0m: Invalid option for register parameter in the configuration file")
                                 logging.error("Invalid option for register parameter in the configuration file")
                     if param_key == "state" and self.init:
                         # Create subription
@@ -159,22 +160,6 @@ class OpcClient:
 
         return data
          
-    def readData(self):
-        data = {}
-        try:
-            client = Client(self.opc_url) 
-            client.connect()
-            for key, val in self.variables.items():
-                node = client.get_node(val) 
-                data[key] = node.get_value()
-            
-            client.disconnect()
-            return data
-
-        except Exception as e:
-            logging.error("Unable to read OPC/UA server data ->" + str(e))
-            sys.exit(1)
-
     # Create a subscription and store the connection handle
     def createSubscription(self, address):
         try:
@@ -187,6 +172,7 @@ class OpcClient:
 
         logging.info("Subscription created for address " + address)
 
+    # Delete subscrition 
     def unsubscribeSubscriptions(self, address=None):
         if len(self.handlers) == 0:
             return True
@@ -205,16 +191,47 @@ class OpcClient:
             # Close subscription
             self.subscription.delete()
 
+# SNMP class to communicate with IOS-XE part 
+class SnmpClient:
+    def __init__(self, gw_ip, community):
+        self.gw_ip = gw_ip
+        self.community = community
+        self.oid = {"latitude": "iso.3.6.1.4.1.9.9.661.1.4.1.1.1.4.4038",
+                    "longtitude": "iso.3.6.1.4.1.9.9.661.1.4.1.1.1.5.4038",
+                    "timestamp": "iso.3.6.1.4.1.9.9.661.1.4.1.1.1.6.4038"
+                    }
+
+    # Get GPS coordinates from IR1101 Cellular module
+    def getCoordinates(self):
+        coordinates = {"latitude":0,"longtitude":0,"timestamp":0}
+        for key,val in self.oid.items():
+            iterator = getCmd(SnmpEngine(),
+                    CommunityData(self.community),
+                    UdpTransportTarget((self.gw_ip, 161)),
+                    ContextData(),
+                    ObjectType(ObjectIdentity(val)))
+            errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
+            for varBind in varBinds:
+                # Reformat timestamp vlaue to a human string
+                if key == "timestamp":
+                    coordinates[key] = bytes.fromhex(varBind.prettyPrint().split("=")[1].strip()[2:]).decode("utf-8")[:-1]
+                else:
+                    coordinates[key] = varBind.prettyPrint().split("=")[1].strip()[2:]
+        return coordinates
+        
+# Handles all activites around MQTT 
 class MqttClient:
-    def __init__(self, broker,port,topic):
+    def __init__(self, broker,port,topic,snmp_client):
         self.broker = str(broker)
         self.topic = str(topic)
         self.port = int(port)
         self.mqtt_client = mqtt.Client(client_id="iox-app", clean_session=False)
+        self.snmp_client = snmp_client
         #self.mqtt_client.on_connect = self.on_connect
         self.mqtt_client.on_message = self.on_message
         self.control = None
 
+    # Login to the MQTT broker
     def login(self):
         try:
             self.mqtt_client.connect(host=self.broker,port=int(self.port),keepalive=60)
@@ -223,10 +240,12 @@ class MqttClient:
             raise Exception("MQTT broker is not available. Please check connectivity by cmd tools")
         logging.info("MQTT client is connected to the broker" + self.broker)
     
+    # Logout from the MQTT broker 
     def logout(self):
         self.mqtt_client.disconnect()
         logging.info("MQTT client is disconnected from the broker" + self.broker)
 
+    # Process received message - commands
     def on_message(self,client, data, msg):
         payload_data = json.loads(str(msg.payload.decode()))
         for cmd_key, cmd_val in payload_data.items():
@@ -238,17 +257,32 @@ class MqttClient:
                 logging.info("Received command from the server: "+cmd_key+":"+cmd_val)
             else:
                 logging.error("Unknown command from MQTT")
-                
 
+    # Send MQTT data to the broker
     def sendData(self,data):
+        # Add GPS 
+        gps_data = self.snmp_client.getCoordinates()
+        # Prepare data records for each OPC/UA variable
         for record_key, record_val in data.items():
             # Add timestamp in ms
+            # NOTE: Maybe it is better to use time from GPS
             record_val["timestamp"] = time.time()*1000
-            # Add gps -> this is temporary
-            record_val["gps_lat"] = 50.0754072
-            record_val["gps_long"] = 14.4165971
+            # Latitude - check if GPS is working if not add the static value -> Charles Square, Prague, CZE
+            if gps_data["latitude"][4] == "0":
+                record_val["gps_lat"] = 50.0754072
+            else:
+                record_val["gps_lat"] = gps_data["latitude"]
+
+            # Longtitude - check if GPS is working if not add the static value -> Charles Square, Prague, CZE
+            if gps_data["longtitude"][4] == "0":
+                record_val["gps_long"] = 14.4165971
+            else:
+                record_val["gps_long"] = gps_data["longtitude"]
+            
+                
             ret = self.mqtt_client.publish(self.topic+record_key,payload=str(record_val), qos=0, retain=False)
 
+    # Subscribe to MQTT to receive commands
     def subscribe(self):
         try:
             self.mqtt_client.subscribe(self.topic+"command")
@@ -300,7 +334,6 @@ class Config:
             logging.error("Missing mandatory General section or General parameters in     the configuration file or parameters are not formated well -> "+ str(e))
     
             
-        #return self.config["general"]
         return general
    
     # TODO: Test that strings are without quotes 
@@ -339,11 +372,21 @@ class Singleton(type):
 
 # The main class to control the whole flow
 class Control(metaclass=Singleton):
-    def __init__(self, poll_interval=5, opc_client=None, mqtt_client=None):
+    def __init__(self, poll_interval=5, poll_change=1, opc_client=None, mqtt_client=None):
         self.poll_interval = int(poll_interval) 
+        self.poll_change = int(poll_change)
+        self.poll_normal = int(poll_interval)
         self.ready_flag = True
         self.opc_client = opc_client
         self.mqtt_client = mqtt_client
+
+    # Change polling interval based on the configuration file
+    def changePollInterval(self):
+        self.poll_interval = self.poll_change
+
+    # Reset polling interval to the default value
+    def resetPollInterval(self):
+        self.poll_interval = self.poll_normal
 
     # Start remote connections 
     def start(self):
@@ -354,7 +397,6 @@ class Control(metaclass=Singleton):
             self.ready_flag = True
             logging.info("MQTT and OPC connections have been established")
         except Exception as e:
-            #print("\033[31mError\033[0m: Unable to login to a remote server -> ", e)
             logging.error("Unable to login to a remote server -> " + str(e))
             sys.exit(1)
         try:
@@ -363,7 +405,7 @@ class Control(metaclass=Singleton):
             logging.error("Unable to subscribe to a remote server -> " + str(e))
             sys.exit(1)
 
-    
+    # Launch the main processing loop -> read and send data
     def run(self):
         data = {}
         try:
@@ -395,7 +437,7 @@ class Control(metaclass=Singleton):
             
 
 if __name__ == "__main__":
-    # Get configuration object
+    # Get configuration object from GUI management location
     params = Config("/data/package_config.ini")
     # General configuration parameters
     general = params.getGeneral()
@@ -404,7 +446,7 @@ if __name__ == "__main__":
     # Get reading settings for variables
     settings = params.getOpcVariablesSettings()
     
-    #Set logging:
+    #Set logging -> used IOx file destination for logs
     debug = str(general["debug"])
     if debug == "True":
         logging.basicConfig(filename="/data/logs/"+general["log_file"],level=logging.DEBUG)
@@ -412,13 +454,15 @@ if __name__ == "__main__":
         logging.basicConfig(filename="/data/logs/"+general["log_file"],level=logging.WARNING)
     logging.debug("Configuration has been loaded")
 
-    # Create opc and mqtt client objects 
+
+    # Create opc, snmp mqtt client objects 
+    snmp_client = SnmpClient(general["gw_ip"],general["community"])
     opc_client = OpcClient(general["opc_server"],variables,settings)
-    mqtt_client = MqttClient(general["mqtt_broker"],general["mqtt_port"],general["topic_name"])
+    mqtt_client = MqttClient(general["mqtt_broker"],general["mqtt_port"],general["topic_name"],snmp_client)
     logging.debug("OPC and MQTT objects has been created")
 
     # Create control object and start process
-    ctl = Control(general["polling"],opc_client,mqtt_client) 
+    ctl = Control(general["polling"],general["polling_change"],opc_client,mqtt_client) 
     logging.debug("Control object has been created")
     ctl.start()
     logging.debug("Control object has started")
