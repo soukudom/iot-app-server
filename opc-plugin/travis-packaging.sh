@@ -1,7 +1,5 @@
   #!/bin/sh
-
-
-mv opc-plugin/ioxclient /usr/local/bin
+  
 
 mkdir opc-plugin/iox-opc-aarch64
 docker save -o rootfs.tar iox-opc
