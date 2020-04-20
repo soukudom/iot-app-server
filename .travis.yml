@@ -1,6 +1,6 @@
 language: python
 arch: arm64 
-dist: bionic
+dist: xenial
 sudo: required
 
 services:
