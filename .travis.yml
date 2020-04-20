@@ -15,6 +15,7 @@ after_script:
 deploy:
   provider: script
   script: opc-plugin/travis-packaging.sh
+  skip_cleanup: true
 
 after deploy:
   - ls -la
