@@ -3,7 +3,7 @@ services:
   - docker
 
 script:
-  - docker build --tag iox-opc iot-app-server/opc-plugin
+  - docker build --tag iox-opc opc-plugin
   - docker run -ti iox-opc
 
 after_script:
