@@ -29,4 +29,5 @@ app:
 
 mv opc-plugin/package.yaml opc-plugin/iox-opc-aarch64/
 cp opc-plugin/package_config.ini opc-plugin/iox-opc-aarch64
+chmod -x  dopc-plugin/ioxclient 
 opc-plugin/ioxclient package opc-plugin/iox-opc-aarch64
