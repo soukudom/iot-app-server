@@ -1,4 +1,4 @@
-  #!/bin/bash
+  #!/bin/sh
 
 
 mv ioxclient /usr/local/bin
