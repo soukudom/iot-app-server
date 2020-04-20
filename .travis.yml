@@ -1,7 +1,9 @@
-os: linux 
+version: ~> 1.0
+os:
+- linux
+language: python
 arch: arm64 
 dist: bionic
-language: python
 sudo: required
 services:
   - docker
