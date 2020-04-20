@@ -3,24 +3,24 @@ arch: arm64
 dist: xenial
 sudo: required
 
-# services:
-#   - docker
+services:
+  - docker
 
-# script:
-#   - docker build --tag iox-opc opc-plugin
+script:
+  - docker build --tag iox-opc opc-plugin
 
-# after_script:
-#   - docker images
+after_script:
+  - docker images
 
 deploy:
   provider: script
-  script: chmod +x opc-plugin/travis-packaging.sh
+  script: chmod +x opc-plugin/travis-packaging.sh && sh opc-plugin/travis-packaging.sh
   skip_cleanup: true
   on:
     branch: master
 
 after deploy:
-  - ls -la
+  script: ls -la
 
 notifications:
   email: false
