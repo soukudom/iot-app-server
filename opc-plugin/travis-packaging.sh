@@ -1,5 +1,5 @@
   #!/bin/sh
-  
+
 
 mkdir opc-plugin/iox-opc-aarch64
 docker save -o rootfs.tar iox-opc
@@ -29,4 +29,4 @@ app:
 
 mv opc-plugin/package.yaml opc-plugin/iox-opc-aarch64/
 cp opc-plugin/package_config.ini opc-plugin/iox-opc-aarch64
-ioxclient package opc-plugin/iox-opc-aarch64
+opc-plugin/ioxclient package opc-plugin/iox-opc-aarch64
