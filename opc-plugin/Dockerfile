@@ -8,7 +8,7 @@ RUN apk upgrade --available
 RUN apk add --no-cache python3 && \
     pip3 install --upgrade pip setuptools
 RUN apk add --no-cache --virtual .build-deps \
-        g++ \
+    g++ \
 	gcc \
 	libxml2 \
 	libxml2-dev \
