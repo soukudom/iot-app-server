@@ -2,12 +2,22 @@ language: python
 arch: arm64 
 dist: bionic
 sudo: required
+
 services:
   - docker
 
 script:
   - docker build --tag iox-opc opc-plugin
-  - docker run -ti iox-opc
 
 after_script:
   - docker images
+
+deploy:
+  provider: script
+  script: opc-plugin/travis-packaging.sh
+
+after deploy:
+  - ls -la
+
+notifications:
+  email: false
