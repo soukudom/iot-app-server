@@ -1,11 +1,11 @@
   #!/bin/sh
 
 
-mv ioxclient /usr/local/bin
+mv opc-plugin/ioxclient /usr/local/bin
 
-mkdir iox-opc-aarch64
+mkdir opc-plugin/iox-opc-aarch64
 docker save -o rootfs.tar iox-opc
-mv rootfs.tar iox-opc-aarch64/
+mv rootfs.tar opc-plugin/iox-opc-aarch64/
 
 echo 'descriptor-schema-version: "2.7"
 
@@ -27,9 +27,8 @@ app:
 
   startup:
     rootfs: rootfs.tar
-    target: ["python3","/opcPlugin.py"]' > package.yaml
+    target: ["python3","/opcPlugin.py"]' > opc-plugin/package.yaml
 
-mv package.yaml iox-opc-aarch64/
-cp package_config.ini iox-opc-aarch64
-ioxclient package iox-opc-aarch64
-echo 'IOx Application Package tar file created. Ready to upload to Cisco Kinetic GMM'
+mv opc-plugin/package.yaml opc-plugin/iox-opc-aarch64/
+cp opc-plugin/package_config.ini opc-plugin/iox-opc-aarch64
+ioxclient package opc-plugin/iox-opc-aarch64
