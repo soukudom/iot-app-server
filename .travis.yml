@@ -1,4 +1,5 @@
 sudo: required
+lang: python
 services:
   - docker
 
