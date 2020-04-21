@@ -1,20 +1,30 @@
 language: sh
 os: linux
-arch: amd64 
+arch: amd64
 dist: bionic
 sudo: required
 
 services:
-  - docker
+- docker
 
-deploy:
-  provider: script
-  script: chmod +x opc-plugin/travis-packaging.sh && sh opc-plugin/travis-packaging.sh
-  on:
-    branch: master
+jobs:
+  include:
+  - stage: Creating Docker container/IOx package
+  - script: chmod +x opc-plugin/travis-packaging.sh
+  - script: sh opc-plugin/travis-packaging.sh
+  - stage: deploy
+    script: skip
+    deploy:
+      provider: releases
+      api_key:
+        secure: plP4X+sK0IaBgps9pLdHxuNrpPwTKo1mB8FPpU8VbjYcue+kZPHY+hhJMXLsaZVMyYWjWQHfJRrL5OmGeX2CLx8VvnSXDjZ7R3kPAV7Z9XvrexLVtcJSbqtNDlMgVHA/yO94/DzMXo40Y/xy0pPszFI/2wTzCgwlpG38iS9i7uiuEwlJFU3pd9Px1jbGBYL4BHn2dXwW51qekqck8ngLinNIIzmjLDTQ++XeOAkmmRqqfTcBoQ4GU/kOWxwc6J7rf6mtnVytsWpQbBlnoPuROu2L9a9S+BzkX4KJR+dVgCm8krkaRktAmEqT6KzbBRVM4D9bhRnQfAw/FpUqnYZ66oYegpu8ZLVq2rB0ABi19A6poork812k5HbS4Z8H2+cmkEfqjjwilrcBOpiOYFRGL0O4f8ZWcxulwR9QXqjRyoEd+R7LNSzzsJgPEAvcrFC2/ydm00LiYKze4BQ+z30RpIP7N9ySZ/qL1TxTbx+wrfJTzPugINSuSed9aj09D0mp0qkBkD2hAGr7FzXvrfBcxB60hIRSeMgXqsfL6hWe1k8ZA7NEwSmWpnxiQQwb0K/DNhzvMXL50ChQQi0RwoNmI3r+hH/GaKwO6vmzLFn+6KfXxhI5/Gpd1UjnoSc8Reh4t6jgwY5hSOlD7+2ZoHy4uHGrUgtF2B1d/yNSlYr9S6w=
+      file: '/home/travis/build/denfw/iot-app-server/opc-plugin/iox-opc-aarch64/package.tar'
+      on:
+        repo:  denfw/iot-app-server 
+        tags: true
 
-after-deploy:
-  - docker images
+after_deploy:
+- docker images
 
 notifications:
   email: false
