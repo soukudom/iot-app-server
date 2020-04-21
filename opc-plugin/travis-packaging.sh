@@ -1,9 +1,25 @@
-  #!/bin/bash
+#!/bin/sh
 
+sudo apt-get install qemu-user qemu-user-static
+echo 'qemu installed'
 
-mkdir opc-plugin/iox-opc-aarch64
-docker save -o rootfs.tar iox-opc
-mv rootfs.tar opc-plugin/iox-opc-aarch64/
+FILE1=opc-plugin/Dockerfile
+FILE2=opc-plugin/opcPlugin.py
+FILE3=opc-plugin/package_config.ini
+FILE4=opc-plugin/requirements.txt
+if [ -f "$FILE1" -a -f "$FILE2" -a -f "$FILE3" -a -f "$FILE4" ]; then
+	echo "$FILE1"
+	echo "$FILE2"
+	echo "$FILE3"
+        echo "$FILE4"
+	echo "are present. Commencing packaging"
+        docker build --tag iox-opc opc-plugin
+        rm -rf opc-plugin/iox-opc-aarch64 && mkdir opc-plugin/iox-opc-aarch64
+        docker save -o rootfs.tar iox-opc
+        mv rootfs.tar opc-plugin/iox-opc-aarch64/
+else
+	echo "One or more of the files not present. Cannot create container"
+fi
 
 echo 'descriptor-schema-version: "2.7"
 

@@ -1,17 +1,11 @@
 language: python
 os: linux
-arch: arm64 
+arch: amd64 
 dist: bionic
 sudo: required
 
 services:
   - docker
-
-script:
-  - docker build --tag iox-opc opc-plugin
-
-after_script:
-  - docker images
 
 deploy:
   provider: script
@@ -21,7 +15,7 @@ deploy:
     branch: master
 
 after deploy:
-  script: ls -la
+  - docker images
 
 notifications:
   email: false
