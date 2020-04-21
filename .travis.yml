@@ -22,6 +22,7 @@ jobs:
         tags: true
         all_branches: true
 
+
 after_deploy:
 - docker images
 
