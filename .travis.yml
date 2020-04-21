@@ -12,8 +12,6 @@ jobs:
   - stage: Creating Docker container/IOx package
   - script: chmod +x opc-plugin/travis-packaging.sh
   - script: sh opc-plugin/travis-packaging.sh
-  - stage: deploy
-    script: skip
     deploy:
       provider: releases
       api_key:
