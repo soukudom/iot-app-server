@@ -1,6 +1,6 @@
 language: python
 os: linux
-arch: amd64 
+arch: arm64 
 dist: bionic
 sudo: required
 
