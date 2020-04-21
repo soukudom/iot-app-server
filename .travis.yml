@@ -10,11 +10,10 @@ services:
 deploy:
   provider: script
   script: chmod +x opc-plugin/travis-packaging.sh && sh opc-plugin/travis-packaging.sh
-  skip_cleanup: true
   on:
     branch: master
 
-after deploy:
+after-deploy:
   - docker images
 
 notifications:
