@@ -1,4 +1,4 @@
-  #!/bin/sh
+  #!/bin/bash
 
 
 mkdir opc-plugin/iox-opc-aarch64
