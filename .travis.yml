@@ -20,6 +20,7 @@ jobs:
       on:
         repo:  denfw/iot-app-server 
         tags: true
+        all_branches: true
 
 after_deploy:
 - docker images
