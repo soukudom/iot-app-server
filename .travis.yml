@@ -13,13 +13,11 @@ jobs:
   - script: chmod +x opc-plugin/travis-packaging.sh
   - script: sh opc-plugin/travis-packaging.sh
     deploy:
-      provider: releases
-      api_key:
-        secure: "LaZrBK22KTEA7ibT4SkyPAcWypZ9GYI30tf3RcF/oPo8xoM8cN7xa8630iRaZmuxqlNsJVWI99Re3hZsw8JaZiOW2ZCsVmMfURITgV/Vv5tiAkN9Q75a/os/WKpLPU1r3pIMZ38wO7o1BB6YBgBTi16IAWl2pIjkLQAVEvrqjtK8q5hst4gVCQRfSeJG8N92YbAycn2otb9+I17YuXblsuR3VIYzY61aa12szYIYYVx16xSUIA1xab+wWTL8I301SS+6NCYq/B5wMhm+H2o4Vt+A4b5xAGQpPUkWAYbuf9GhZV6Ni1vmIYpW/O4NjxjjrNl6ZkQsGHqF8IqEEIWdXZrq6kE8suYmAwly70dw6GtV5L4KnVc/jUFMkP0m6AqgjrlPh8Yh0qJNeWm2vdr9knJoNiWWtw6rRl9lO2n2LfBOpEqgFwjyUynKVEX8LtE9pW7CPsdTwM/Ica6MAgZZuPbvwmpqhVCvVn6Yi7lU5y1mXaL1NblGWzvfthzTI7fBo3NpDlHHLtIQSodWOTslrEUaOmFcMSWpXfI5V35PbjQNA6i6lt1efdjpUT4UFArGTuSe+MoHUC1VFHHYIEohGxK0Nj4mpEC78B1ElG1a5mYp2VTjQBUMY0YOeuNTLWAoZt3gVVsszBxdbnFVhWkWCsrJ07ranQaeDASCcyQTlxY="
-      file: '/home/travis/build/denfw/iot-app-server/opc-plugin/iox-opc-aarch64/package.tar'
+      provider: pages
+      skip_cleanup: true
+      github_token: $GITHUB_TOKEN
+      target_branch: build
       on:
-        repo:  denfw/iot-app-server 
-        tags: true
         branch: true
 
 after_deploy:
