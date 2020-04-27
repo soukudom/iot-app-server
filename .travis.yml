@@ -15,6 +15,7 @@ jobs:
     deploy:
       provider: pages
       skip_cleanup: true
+      local_dir: /home/travis/build/soukudom/iot-app-server/opc-plugin/iox-opc-aarch64/
       github_token: $GITHUB_TOKEN
       target_branch: build
       on:
@@ -23,5 +24,3 @@ jobs:
 after_deploy:
 - docker images
 
-notifications:
-  email: false
