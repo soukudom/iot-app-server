@@ -25,7 +25,7 @@ deploy:
     token: $GITHUB_TOKEN
     overwrite: true
     on:
-        tags: true
+        tags: false
 
 after_deploy:
     - docker images
