@@ -5,7 +5,7 @@ dist: bionic
 sudo: required
 
 services:
-- docker
+    - docker
 
 before_deploy:
     - git config --local user.name "Travis CI IOx"
@@ -13,23 +13,22 @@ before_deploy:
     - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
     - git tag $TRAVIS_TAG
 
-jobs:
-  include:
-  - stage: Creating Docker container/IOx package
-  - script: chmod +x opc-plugin/travis-packaging.sh
-  - script: sh opc-plugin/travis-packaging.sh
-    deploy:
-      provider: releases
-      file: /home/travis/build/soukudom/iot-app-server/opc-plugin/iox-opc-aarch64/package.tar
-      skip_cleanup: true
-      api_key: $GITHUB_TOKEN
-      target_branch: build
-      on:
+script: 
+    - chmod +x opc-plugin/travis-packaging.sh
+    - sh opc-plugin/travis-packaging.sh
+
+deploy:
+    provider: releases
+    file: /home/travis/build/soukudom/iot-app-server/opc-plugin/iox-opc-aarch64/package.tar
+    skip_cleanup: true
+    api_key: $GITHUB_TOKEN
+    target_branch: build
+    on:
         tags: true
 
 after_deploy:
-- docker images
+    - docker images
 
 notifications:
-  email: false
+    email: false
 
