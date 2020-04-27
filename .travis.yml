@@ -11,11 +11,11 @@ script:
     - chmod +x opc-plugin/travis-packaging.sh
     - sh opc-plugin/travis-packaging.sh
 
-#before_deploy:
-#    - git config --local user.name "Dominik Soukup"
-#    - git config --local user.email "soukupdo@gmail.com"
-#    - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
-#    - git tag $TRAVIS_TAG
+before_deploy:
+    - git config --local user.name "Dominik Soukup"
+    - git config --local user.email "soukupdo@gmail.com"
+    - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
+    - git tag $TRAVIS_TAG
 
 deploy:
     provider: releases
@@ -24,10 +24,7 @@ deploy:
     token: $GITHUB_TOKEN
     overwrite: true
     on:
-        tags: true
-
-#after_deploy:
-#    - docker images
+        tags: false
 
 notifications:
     email: false
