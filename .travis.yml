@@ -15,7 +15,7 @@ jobs:
     deploy:
       provider: pages
       skip_cleanup: true
-      local_dir: /home/travis/build/soukudom/iot-app-server/opc-plugin/iox-opc-aarch64/
+      local_dir: /home/travis/build/soukudom/iot-app-server/opc-plugin/iox-opc-aarch64/package.tar
       github_token: $GITHUB_TOKEN
       target_branch: build
       on:
