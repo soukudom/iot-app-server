@@ -12,17 +12,16 @@ script:
     - sh opc-plugin/travis-packaging.sh
 
 before_deploy:
-    - git config --local user.name "Travis CI IOx"
-    - git config --local user.email "example@cisco.com"
+    - git config --local user.name "Dominik Soukup"
+    - git config --local user.email "soukudom@gmail.com"
     - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
     - git tag $TRAVIS_TAG
 
 deploy:
     provider: releases
     file: /home/travis/build/soukudom/iot-app-server/opc-plugin/iox-opc-aarch64/package.tar
-    skip_cleanup: true
-    api_key: $GITHUB_TOKEN
-    target_branch: build
+    cleanup: true
+    token: $GITHUB_TOKEN
     overwrite: true
     on:
         tags: true
