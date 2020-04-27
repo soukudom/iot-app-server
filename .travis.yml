@@ -13,13 +13,13 @@ jobs:
   - script: chmod +x opc-plugin/travis-packaging.sh
   - script: sh opc-plugin/travis-packaging.sh
     deploy:
-      provider: pages
+      provider: releases
+      file: /home/travis/build/soukudom/iot-app-server/opc-plugin/iox-opc-aarch64/package.tar
       skip_cleanup: true
-      local_dir: /home/travis/build/soukudom/iot-app-server/opc-plugin/iox-opc-aarch64/package.tar
-      github_token: $GITHUB_TOKEN
+      api_key: $GITHUB_TOKEN
       target_branch: build
       on:
-        branch: master
+        tags: false
 
 after_deploy:
 - docker images
