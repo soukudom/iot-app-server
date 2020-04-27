@@ -19,8 +19,11 @@ jobs:
       api_key: $GITHUB_TOKEN
       target_branch: build
       on:
-        tags: false
+        tags: true
 
 after_deploy:
 - docker images
+
+notifications:
+  email: false
 
