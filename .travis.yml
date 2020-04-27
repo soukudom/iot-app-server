@@ -25,6 +25,7 @@ deploy:
     overwrite: true
     on:
         tags: true
+        branch: master
 
 notifications:
     email: false
