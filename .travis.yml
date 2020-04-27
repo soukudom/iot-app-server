@@ -12,8 +12,8 @@ script:
     - sh opc-plugin/travis-packaging.sh
 
 before_deploy:
-    - git config --local user.name "Dominik Soukup"
-    - git config --local user.email "soukupdo@gmail.com"
+    - git config --local user.name "Cisco IOx Travis CI"
+    - git config --local user.email "example@cisco.com"
     - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
     - git tag $TRAVIS_TAG
 
